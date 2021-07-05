@@ -26,6 +26,7 @@ public class Window extends JFrame {
     private int number;
     private int x1, y1;
     private int x2, y2;
+    private final Solver sol;
     //Graphics g;
 
     private void createMenu() {
@@ -61,6 +62,7 @@ public class Window extends JFrame {
         setVisible(true);
 
         ArrayList<Integer> cord = new ArrayList<Integer>();
+        sol = new Solver();
 
         screenPanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -85,7 +87,6 @@ public class Window extends JFrame {
         //});
 
 
-
         screenPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -94,11 +95,14 @@ public class Window extends JFrame {
                     System.out.println(e.getButton());
                     Graphics g = screenPanel.getGraphics();
                     g.drawOval(e.getX() - 20, e.getY() - 20, 40, 40);
+                    /*g.setColor(Color.white);
                     g.fillOval(e.getX() - 20, e.getY() - 20, 40, 40);
+                    g.setColor(Color.black);*/
                     g.drawString(Integer.toString(++number), e.getX(), e.getY());
                     //setVisible(true);
                 }
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
@@ -124,8 +128,8 @@ public class Window extends JFrame {
         //add(jp);
         //setVisible(true);
 
-        screenPanel.addComponentListener(new ComponentAdapter() {
-            @Override
+        screenPanel.addComponentListener(new ComponentAdapter() { // пофиксить исчезновение
+            @Override                                             // вершин при изменении размера окна
             public void componentResized(ComponentEvent e) {
                 super.componentResized(e);
                 System.out.println("Resized");
@@ -145,7 +149,24 @@ public class Window extends JFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                onTest();
+                sol.reset();
+                FileHandler loader = new FileHandler("file.txt");
+                ArrayList<Integer> data = loader.load();
+                int i = 1;
+                for (int j = 0; j < data.get(0); j++) {
+                    sol.addVertex();
+                }
+                for (int j = 1; j < data.size(); j++) {
+                    if (data.get(j) != -1) {
+                        sol.addEdge(i, data.get(j), data.get(j + 1));
+                        j++;
+                        continue;
+                    }
+                    i++;
+                }
+                annotationsLabel.setText("Число вершин: " + data.get(0));
+                beginButton.setEnabled(true);
+                //stepButton.setEnabled(false);
             }
         });
 
@@ -153,7 +174,9 @@ public class Window extends JFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                onTest();
+                beginButton.setEnabled(false);
+                sol.setInit(1);
+                stepButton.setEnabled(true);
             }
         });
 
@@ -193,9 +216,22 @@ public class Window extends JFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                onTest();
+                CustomLogger logger = new CustomLogger(1);
+                if (!sol.step(logger)) {
+                    stepButton.setEnabled(false);
+                    beginButton.setEnabled(false);
+                    return;
+                }
+                annotationsLabel.setText(logger.getNextMessage());
             }
         });
+
+        beginButton.setEnabled(false);
+        stepButton.setEnabled(false);
+        save.setEnabled(false);
+        resetButton.setEnabled(false);
+        clearButton.setEnabled(false);
+        autoButton.setEnabled(false);
     }
 
     private void onTest() {
