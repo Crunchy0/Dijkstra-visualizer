@@ -1,9 +1,11 @@
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Dimension;
+import java.awt.event.*;
+import java.util.ArrayList;
 
 public class Window extends JFrame {
     private JPanel rootPanel;
@@ -18,8 +20,13 @@ public class Window extends JFrame {
     private JPanel basicPanel;
     private JPanel annotationsPanel;
     private JLabel annotationsLabel;
+    private JPanel jp;
     private JMenuItem save;
     private JMenuItem load;
+    private int number;
+    private int x1, y1;
+    private int x2, y2;
+    //Graphics g;
 
     private void createMenu() {
         JMenuBar menuBar = new JMenuBar();
@@ -32,19 +39,99 @@ public class Window extends JFrame {
         setJMenuBar(menuBar);
     }
 
+    private void setButtonsBorders() {
+        settingsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        basicPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+    }
+
+    //public void paint(Graphics g) {
+    //    super.paint(g);
+    //    Graphics2D g2 = (Graphics2D) g;
+    //    // рисуем окружности
+    //}
+
+
     public Window() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setContentPane(rootPanel);
         setSize(1000, 750);
         setLocationRelativeTo(null);
         createMenu();
+        setButtonsBorders();
         setVisible(true);
 
-        //beginButton.addActionListener(new ActionListener() {
-        //    public void actionPerformed(ActionEvent e) {
-        //        onTest();
+        ArrayList<Integer> cord = new ArrayList<Integer>();
+
+        screenPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                //System.out.println(e.getX() + "" + e.getY());
+                super.mouseDragged(e);
+                System.out.println("aboba");
+            }
+        });
+
+        //screenPanel.addMouseMotionListener(new MouseAdapter() {
+        //    @Override
+        //    public void mouseClicked(MouseEvent e) {
+        //        super.mouseClicked(e);
+        //        System.out.println(e.getX() + " " + e.getY());
+        //    }
+        //    @Override
+        //    public void mouseReleased(MouseEvent e) {
+        //        super.mouseReleased(e);
+        //        System.out.println(e.getX() + " " + e.getY());
         //    }
         //});
+
+
+
+        screenPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 & e.getButton() == 1) {
+                    super.mouseClicked(e);
+                    System.out.println(e.getButton());
+                    Graphics g = screenPanel.getGraphics();
+                    g.drawOval(e.getX() - 20, e.getY() - 20, 40, 40);
+                    g.fillOval(e.getX() - 20, e.getY() - 20, 40, 40);
+                    g.drawString(Integer.toString(++number), e.getX(), e.getY());
+                    //setVisible(true);
+                }
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                System.out.println(x1 + " " + y1);
+                //System.out.println(e.getX() + " " + e.getY());
+                x2 = e.getX();
+                y2 = e.getY();
+                if (!(x1 == x2 & y1 == y2)) {
+                    Graphics g = screenPanel.getGraphics();
+                    g.drawLine(x1, y1, x2, y2);
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mouseReleased(e);
+                System.out.println(e.getX() + " " + e.getY());
+                x1 = e.getX();
+                y1 = e.getY();
+            }
+        });
+
+        //add(jp);
+        //setVisible(true);
+
+        screenPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                super.componentResized(e);
+                System.out.println("Resized");
+                //screenPanel.paint(g);
+            }
+        });
 
         save.addMouseListener(new MouseAdapter() {
             @Override
@@ -161,6 +248,7 @@ public class Window extends JFrame {
         settingsPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         settingsPanel.setBackground(new Color(-2169993));
         rootPanel.add(settingsPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 6, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(100, 50), null, null, 0, false));
+        settingsPanel.setBorder(BorderFactory.createTitledBorder(null, "", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         autoButton = new JButton();
         autoButton.setText("Auto");
         settingsPanel.add(autoButton, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -173,14 +261,14 @@ public class Window extends JFrame {
         screenPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         screenPanel.setBackground(new Color(-6817537));
         rootPanel.add(screenPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 4, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final com.intellij.uiDesigner.core.Spacer spacer3 = new com.intellij.uiDesigner.core.Spacer();
-        screenPanel.add(spacer3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, 1, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        screenPanel.setBorder(BorderFactory.createTitledBorder(null, "Screen Panel", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         annotationsPanel = new JPanel();
         annotationsPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         annotationsPanel.setBackground(new Color(-2120801));
         rootPanel.add(annotationsPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTH, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        annotationsPanel.setBorder(BorderFactory.createTitledBorder(null, "Annotations", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         annotationsLabel = new JLabel();
-        annotationsLabel.setText("Annotations");
+        annotationsLabel.setText("Aboba");
         annotationsPanel.add(annotationsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
