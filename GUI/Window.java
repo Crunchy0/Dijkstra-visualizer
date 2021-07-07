@@ -1,15 +1,47 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
+class AutoMode extends Thread{
+    private Solver solver;
+    private CustomLogger logger;
+    private TextArea textArea;
+
+    public AutoMode(Solver sol, CustomLogger log, TextArea ta){
+        super();
+        this.solver = sol;
+        this.logger = log;
+        this.textArea = ta;
+    }
+
+    public void run(){
+        boolean running = solver.step(logger);
+        while(running) {
+            textArea.setText(logger.getNextMessage());
+            try {
+                Thread.sleep(2000);
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+            running = solver.step(logger);
+        }
+    }
+}
 
 public class Window extends JFrame{
+    private final Solver solver = new Solver();
+    private final  CustomLogger logger = new CustomLogger(10);
     private final JPanel rootPanel = new JPanel();
     private final JPanel annotationsPanel = new JPanel();
     private final JPanel bottomPanel = new JPanel();
     private final JPanel settingsPanel = new JPanel();
-    private final GPanel canvasPanel = new GPanel();
+    private final GPanel canvasPanel = new GPanel(solver);
     private final TextArea textArea = new TextArea();
     private final JTextField textField = new JTextField();
     private final JLabel infoLabel = new JLabel("Информация");
@@ -53,6 +85,25 @@ public class Window extends JFrame{
         infoLabel.setOpaque(true);
         infoLabel.setPreferredSize(new Dimension(-1, 80));
 
+        beginButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                solver.setInit(1);
+                stepButton.setEnabled(true);
+                execute();
+            }
+        });
+
+        clearButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                solver.clear();
+                canvasPanel.clear();
+            }
+        });
+
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -61,13 +112,16 @@ public class Window extends JFrame{
             }
         });
 
-        approveButton.addMouseListener(new MouseAdapter() {
+        stepButton.setEnabled(false);
+        stepButton.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                canvasPanel.setMainVertex();
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                /*solver.step(logger);
+                textArea.setText(logger.getNextMessage());*/
             }
         });
+
         // Настройка компонентов 2 уровня (панелей)
 
         annotationsPanel.setLayout(new GridBagLayout());
@@ -196,6 +250,21 @@ public class Window extends JFrame{
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         add(rootPanel);
         setContentPane(rootPanel);
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                super.keyPressed(e);
+                if(e.getKeyCode() == KeyEvent.VK_SHIFT){
+                    System.out.println("Shift");
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                super.keyReleased(e);
+            }
+        });
+        pack();
         setVisible(true);
     }
 
@@ -205,6 +274,27 @@ public class Window extends JFrame{
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("Файл");
         JMenuItem loadButton = new JMenuItem("Загрузить");
+        loadButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                FileHandler fh = new FileHandler("file.txt");
+                ArrayList<Integer> loaded =  fh.load();
+                int number = loaded.get(0);
+                int vId = 1;
+                for(int i = 0; i < number; i++){
+                    solver.addVertex();
+                }
+                for(int j = 1; j < loaded.size(); j++){
+                    if(loaded.get(j) == -1){
+                        vId++;
+                    }
+                    else{
+                        solver.addEdge(vId, loaded.get(j++), loaded.get(j));
+                    }
+                }
+            }
+        });
         JMenuItem saveButton = new JMenuItem("Сохранить");
         JMenuItem closeButton = new JMenuItem("Закрыть");
         closeButton.addMouseListener(new MouseAdapter() {
@@ -230,6 +320,22 @@ public class Window extends JFrame{
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         rootPanel.add(menuBar, gbc);
+    }
+
+    public void execute(){
+        /*boolean running = solver.step(logger);
+        while(running) {
+            textArea.setText(logger.getNextMessage());
+            try {
+                Thread.sleep(2000);
+            }
+            catch(Exception e){
+                System.out.println("Something went wrong");
+            }
+            running = solver.step(logger);
+        }*/
+        AutoMode thr = new AutoMode(solver, logger, textArea);
+        thr.start();
     }
 
     public static void main(String[] args){
