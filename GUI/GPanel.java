@@ -8,6 +8,8 @@ public class GPanel extends JPanel {
 
     private final int RADIUS = 20;
     private final ArrayList<Pair<Integer, Integer>> circles;
+    private Pair<Integer, Integer> curCircle;
+    private Pair<Integer, Integer> mainCircle;
     private final ArrayList<Pair<Pair<Integer, Integer>, Pair<Integer, Integer>>> edges;
     int x1, y1, x2, y2;
     int i1, i2;
@@ -19,7 +21,8 @@ public class GPanel extends JPanel {
 
         circles = new ArrayList<Pair<Integer, Integer>>(2);
         edges = new ArrayList<>();
-
+        curCircle = new Pair(-1,-1);
+        mainCircle = new Pair(-1,-1);
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {//Добавление вершин
@@ -30,6 +33,10 @@ public class GPanel extends JPanel {
                     }
                     else
                         System.out.println("There are already ver");
+                }
+                int ver = isVertexForEdge(e.getX(), e.getY());
+                if((e.getClickCount() == 1 && ver != -1)){
+                    curCircle = circles.get(ver);
                 }
                 getParent().repaint();
                 super.mouseClicked(e);
@@ -104,7 +111,6 @@ public class GPanel extends JPanel {
     }
 
 
-
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         for(Pair<Integer, Integer> p: circles) {
@@ -115,10 +121,38 @@ public class GPanel extends JPanel {
             String s = Integer.toString(circles.indexOf(p) + 1);
             g.drawString(s, p.first() - 3*(s.length()), p.second() + 4);
         }
+
         for(Pair<Pair<Integer, Integer>, Pair<Integer, Integer>> p: edges){
             g.setColor(Color.BLACK);
             g.drawLine(p.first().first(), p.first().second(), p.second().first(), p.second().second());
-
         }
+
+        if(mainCircle.first() != -1){
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.RED);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawOval(mainCircle.first() - RADIUS, mainCircle.second() - RADIUS, RADIUS*2, RADIUS*2);
+        }
+
+        if(curCircle.first() != -1){
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.YELLOW);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawOval(curCircle.first() - RADIUS, curCircle.second() - RADIUS, RADIUS*2, RADIUS*2);
+        }
+
+
+
     }
+
+    public Pair<Integer, Integer> getMainVertex(){
+        return mainCircle;
+    };
+
+    public void setMainVertex(){
+        mainCircle = curCircle;
+        //mainCircle.setF(curCircle.first());
+        //mainCircle.setS(curCircle.second());
+    }
+
 }
