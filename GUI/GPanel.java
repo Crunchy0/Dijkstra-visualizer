@@ -40,7 +40,7 @@ public class GPanel extends JPanel {
 
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {//Добавление вершин
+            public void mouseClicked(MouseEvent e) {
                 if((e.getClickCount() == 2) && (e.getButton() == 1)){
                     boolean intersects = false;
                     for(VisualVertex v : circles){
@@ -69,7 +69,7 @@ public class GPanel extends JPanel {
             }
 
             @Override
-            public void mousePressed(MouseEvent e) {//Рисование прямой
+            public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
                 if(drawingEdge && curEdge != null && (e.getX() != curEdge.getX1() || e.getY() != curEdge.getY1())) {
                     boolean isInFirst = false;
@@ -156,38 +156,5 @@ public class GPanel extends JPanel {
         if(curEdge != null){
             g.drawLine(curEdge.getX1(), curEdge.getY1(), curEdge.getX2(), curEdge.getY2());
         }
-
-        for(Pair<Pair<Integer, Integer>, Pair<Integer, Integer>> p: edges){
-            g.setColor(Color.BLACK);
-            g.drawLine(p.first().first(), p.first().second(), p.second().first(), p.second().second());
-        }
-
-        if(mainCircle.first() != -1){
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setColor(Color.RED);
-            g2.setStroke(new BasicStroke(3));
-            g2.drawOval(mainCircle.first() - RADIUS, mainCircle.second() - RADIUS, RADIUS*2, RADIUS*2);
-        }
-
-        if(curCircle.first() != -1){
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setColor(Color.YELLOW);
-            g2.setStroke(new BasicStroke(3));
-            g2.drawOval(curCircle.first() - RADIUS, curCircle.second() - RADIUS, RADIUS*2, RADIUS*2);
-        }
-
-
-
     }
-
-    public Pair<Integer, Integer> getMainVertex(){
-        return mainCircle;
-    };
-
-    public void setMainVertex(){
-        mainCircle = curCircle;
-        //mainCircle.setF(curCircle.first());
-        //mainCircle.setS(curCircle.second());
-    }
-
 }
