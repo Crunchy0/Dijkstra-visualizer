@@ -244,7 +244,7 @@ public class Window extends JFrame{
         // Настройка компонента 0 уровня (окна)
 
         setTitle("Алгоритм Дейкстры");
-        setSize(new Dimension(1024, 1024));
+        setSize(new Dimension(1024, 768));
         setMinimumSize(new Dimension(700,700));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
