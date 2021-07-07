@@ -24,7 +24,7 @@ public class CustomLogger {
         }
         if(this.nextMessageIndex == (this.messages.size() - 1)){
             this.endReached = true;
-            return this.messages.get(this.nextMessageIndex);
+            return this.messages.get(this.nextMessageIndex++);
         }
         return this.messages.get(this.nextMessageIndex++);
     }

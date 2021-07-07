@@ -87,6 +87,10 @@ public class Solver {
         return false;
     }
 
+    public void clear(){
+        vertSet.clear();
+    }
+
     public void reset(){
         this.init = null;
         for(Vertex v : vertSet){
@@ -105,7 +109,7 @@ public class Solver {
             path = par.getId() + " " + path;
             par = par.getParent();
         }
-        path = "Путь: " + path + v.getId() + " ";
+        path = "Путь: " + path + v.getId() + "\n";
         info = info + path + "Длина пути: " + Integer.toString(v.getPathLen());
         return info;
     }
