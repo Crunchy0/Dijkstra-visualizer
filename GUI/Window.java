@@ -95,6 +95,14 @@ public class Window extends JFrame{
             }
         });
 
+        approveButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                canvasPanel.setMainVertex();
+            }
+        });
+
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {

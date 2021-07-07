@@ -12,6 +12,8 @@ public class GPanel extends JPanel {
     private final ArrayList<VisualVertex> circles;
     private final ArrayList<VisualEdge> edges;
     private VisualEdge curEdge;
+    private VisualVertex curCircle;
+    private VisualVertex mainCircle;
     boolean drawingEdge = false;
 
     public GPanel(Solver solver){
@@ -19,6 +21,9 @@ public class GPanel extends JPanel {
 
         circles = new ArrayList<VisualVertex>(2);
         edges = new ArrayList<VisualEdge>(2);
+
+        curCircle = new VisualVertex(-1,-1, -1, Color.BLACK);
+        mainCircle = new VisualVertex(-1,-1, -1, Color.BLACK);
 
         addKeyListener(new KeyAdapter() {
             @Override
@@ -56,6 +61,11 @@ public class GPanel extends JPanel {
                         getParent().repaint();
                     }
                 }
+                int ver = isVertexForEdge(e.getX(), e.getY());
+                if((e.getClickCount() == 1 && ver != -1)){
+                    curCircle = circles.get(ver);
+                }
+                getParent().repaint();
                 super.mouseClicked(e);
             }
 
@@ -140,6 +150,22 @@ public class GPanel extends JPanel {
         getParent().repaint();
     }
 
+    private int isVertexForEdge(int x, int y) //........
+    {
+        for (int i = 0; i < circles.size(); i++) {
+            //System.out.println("x = " + x + " vertX = " + verticesX.get(i) + " y = " + y + " vertY = " + verticesY.get(i));
+            if (Math.sqrt(Math.pow((x - circles.get(i).getX()), 2) + Math.pow((y - circles.get(i).getY()), 2)) < RADIUS+1) {
+                //System.out.println("i = " + i);
+                return i;    //если в вершине #i
+            }
+        }
+        return -1;
+    }
+
+    public void setMainVertex(){
+        mainCircle = curCircle;
+    }
+
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         for(VisualEdge e : edges){
@@ -155,6 +181,19 @@ public class GPanel extends JPanel {
         }
         if(curEdge != null){
             g.drawLine(curEdge.getX1(), curEdge.getY1(), curEdge.getX2(), curEdge.getY2());
+        }
+        if(mainCircle.getX() != -1){
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.RED);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawOval(mainCircle.getX() - RADIUS, mainCircle.getY() - RADIUS, RADIUS*2, RADIUS*2);
+        }
+
+        if(curCircle.getX() != -1){
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.YELLOW);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawOval(curCircle.getX() - RADIUS, curCircle.getY() - RADIUS, RADIUS*2, RADIUS*2);
         }
     }
 }
