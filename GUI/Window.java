@@ -1,331 +1,231 @@
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Dimension;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-public class Window extends JFrame {
-    private JPanel rootPanel;
-    private JButton beginButton;
-    private JButton resetButton;
-    private JButton quitButton;
-    private JButton clearButton;
-    private JButton autoButton;
-    private JButton stepButton;
-    private JPanel settingsPanel;
-    private JPanel screenPanel;
-    private JPanel basicPanel;
-    private JPanel annotationsPanel;
-    private JLabel annotationsLabel;
-    private JLabel settingsLabel;
-    private JTextField textField;
-    private JButton approveButton;
-    private JPanel jp;
-    private JMenuItem save;
-    private JMenuItem load;
-    private int number;
-    private int x1, y1;
-    private int x2, y2;
-    private final Solver sol;
-    //Graphics g;
+public class Window extends JFrame{
+    private final JPanel rootPanel = new JPanel();
+    private final JPanel annotationsPanel = new JPanel();
+    private final JPanel bottomPanel = new JPanel();
+    private final JPanel settingsPanel = new JPanel();
+    private final GPanel canvasPanel = new GPanel();
+    private final TextArea textArea = new TextArea();
+    private final JTextField textField = new JTextField();
+    private final JLabel infoLabel = new JLabel("Информация");
+    private final JButton approveButton = new JButton("Подтвердить");
+    private final JButton setTimeButton = new JButton("Задать интервал");
+    private final JButton setButton = new JButton("Применить");
+    private final JButton deleteButton = new JButton("Удалить");
+    private final JButton autoButton = new JButton("Авто");
+    private final JButton stepButton = new JButton("Шаг");
+    private final JButton beginButton = new JButton("Начать");
+    private final JButton resetButton = new JButton("Сброс");
+    private final JButton clearButton = new JButton("Очистить");
+    private final JButton closeButton = new JButton("Закрыть");
 
-    private void createMenu() {
-        JMenuBar menuBar = new JMenuBar();
-        JMenu file = new JMenu("File");
-        save = new JMenuItem("Save");
-        load = new JMenuItem("Load");
-        file.add(save);
-        file.add(load);
-        menuBar.add(file);
-        setJMenuBar(menuBar);
+    public Window(){
+        super();
+        init();
     }
 
-    private void setButtonsBorders() {
-        settingsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-        basicPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-    }
+    private void init(){
+        // Ограничители для раскладки GridBagLayout
 
-    //public void paint(Graphics g) {
-    //    super.paint(g);
-    //    Graphics2D g2 = (Graphics2D) g;
-    //    // рисуем окружности
-    //}
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // Настройка компонентов 3 уровня (кнопок, текстовых полей и т.п.)
+
+        textArea.setEditable(false);
+        textArea.setPreferredSize(new Dimension(50, 80));
+        textArea.setText("З\nА\nГ\nЛ\nУ\nШ\nК\nА");
+        textArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+                textArea.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+            }
+        });
+
+        infoLabel.setHorizontalAlignment(SwingConstants.LEFT);
+        infoLabel.setVerticalAlignment(SwingConstants.TOP);
+        infoLabel.setBackground(Color.WHITE);
+        infoLabel.setOpaque(true);
+        infoLabel.setPreferredSize(new Dimension(-1, 80));
+
+        closeButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                dispose();
+            }
+        });
+
+        // Настройка компонентов 2 уровня (панелей)
+
+        annotationsPanel.setLayout(new GridBagLayout());
+        annotationsPanel.setBackground(new Color(223,163,159));
+        annotationsPanel.setBorder(BorderFactory.createTitledBorder("Аннотации"));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1f;
+        gbc.weighty = 0f;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTH;
+        annotationsPanel.add(textArea, gbc);
 
 
-    public Window() {
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setContentPane(rootPanel);
-        setSize(1000, 750);
-        setLocationRelativeTo(null);
+        canvasPanel.setBorder(BorderFactory.createTitledBorder("Граф"));
+        canvasPanel.setBackground(new Color(151,248,255));
+        canvasPanel.setOpaque(true);
+
+
+        settingsPanel.setLayout(new GridBagLayout());
+        settingsPanel.setBackground(new Color(222,227,119));
+        settingsPanel.setBorder(BorderFactory.createTitledBorder("Установки"));
+        settingsPanel.setPreferredSize(new Dimension(200, -1));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.weighty = 0.005;
+        gbc.anchor = GridBagConstraints.NORTH;
+        gbc.fill = GridBagConstraints.BOTH;
+        settingsPanel.add(infoLabel, gbc);
+        gbc.gridwidth = 2;
+        gbc.gridy = 1;
+        settingsPanel.add(textField, gbc);
+        gbc.gridy = 2;
+        settingsPanel.add(approveButton, gbc);
+        gbc.gridwidth = 1;
+        settingsPanel.add(setButton, gbc);
+        gbc.gridx = 1;
+        settingsPanel.add(deleteButton, gbc);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        settingsPanel.add(setTimeButton, gbc);
+        gbc.gridy = 4;
+        gbc.gridwidth = 1;
+        gbc.weightx = 1f;
+        gbc.weighty = 0.495;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.SOUTH;
+        settingsPanel.add(autoButton, gbc);
+        gbc.gridx = 1;
+        settingsPanel.add(stepButton, gbc);
+
+
+        bottomPanel.setLayout(new GridBagLayout());
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+        bottomPanel.setBackground(new Color(140, 223, 122));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.02f;
+        bottomPanel.add(beginButton, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.02f;
+        bottomPanel.add(resetButton, gbc);
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.weightx = 0.88f;
+        bottomPanel.add(Box.createHorizontalStrut(0), gbc);
+        gbc.gridx = 3;
+        gbc.gridy = 0;
+        gbc.weightx = 0.02f;
+        bottomPanel.add(clearButton, gbc);
+        gbc.gridx = 4;
+        gbc.gridy = 0;
+        gbc.weightx = 0.02f;
+        bottomPanel.add(closeButton, gbc);
+
+        // Настройка компонентов 1 уровня (главная панель)
+
+        rootPanel.setLayout(new GridBagLayout());
+        rootPanel.setBackground(Color.GRAY);
+
         createMenu();
-        setButtonsBorders();
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.9f;
+        gbc.weighty = 0.01f;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets.set(3,3,0,0);
+        rootPanel.add(annotationsPanel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.9f;
+        gbc.weighty = 0.8f;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets.set(3,3,3,0);
+        rootPanel.add(canvasPanel, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weightx = 0f;
+        gbc.weighty = 1f;
+        gbc.gridheight = 3;
+        gbc.insets.set(3,3,3,3);
+        gbc.fill = GridBagConstraints.BOTH;
+        rootPanel.add(settingsPanel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0.9f;
+        gbc.weighty = 0.005f;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets.set(0,3,3,0);
+        rootPanel.add(bottomPanel, gbc);
+
+        // Настройка компонента 0 уровня (окна)
+
+        setTitle("Алгоритм Дейкстры");
+        setSize(new Dimension(1024, 1024));
+        setMinimumSize(new Dimension(700,700));
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        add(rootPanel);
+        setContentPane(rootPanel);
         setVisible(true);
-
-        ArrayList<Integer> cord = new ArrayList<Integer>();
-        sol = new Solver();
-
-        screenPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                //System.out.println(e.getX() + "" + e.getY());
-                super.mouseDragged(e);
-                System.out.println("aboba");
-            }
-        });
-
-        //screenPanel.addMouseMotionListener(new MouseAdapter() {
-        //    @Override
-        //    public void mouseClicked(MouseEvent e) {
-        //        super.mouseClicked(e);
-        //        System.out.println(e.getX() + " " + e.getY());
-        //    }
-        //    @Override
-        //    public void mouseReleased(MouseEvent e) {
-        //        super.mouseReleased(e);
-        //        System.out.println(e.getX() + " " + e.getY());
-        //    }
-        //});
-
-
-        screenPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 & e.getButton() == 1) {
-                    super.mouseClicked(e);
-                    System.out.println(e.getButton());
-                    Graphics g = screenPanel.getGraphics();
-                    g.drawOval(e.getX() - 20, e.getY() - 20, 40, 40);
-                    /*g.setColor(Color.white);
-                    g.fillOval(e.getX() - 20, e.getY() - 20, 40, 40);
-                    g.setColor(Color.black);*/
-                    g.drawString(Integer.toString(++number), e.getX(), e.getY());
-                    //setVisible(true);
-                }
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                System.out.println(x1 + " " + y1);
-                //System.out.println(e.getX() + " " + e.getY());
-                x2 = e.getX();
-                y2 = e.getY();
-                if (!(x1 == x2 & y1 == y2)) {
-                    Graphics g = screenPanel.getGraphics();
-                    g.drawLine(x1, y1, x2, y2);
-                }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mouseReleased(e);
-                System.out.println(e.getX() + " " + e.getY());
-                x1 = e.getX();
-                y1 = e.getY();
-            }
-        });
-
-        //add(jp);
-        //setVisible(true);
-
-        screenPanel.addComponentListener(new ComponentAdapter() { // пофиксить исчезновение
-            @Override                                             // вершин при изменении размера окна
-            public void componentResized(ComponentEvent e) {
-                super.componentResized(e);
-                System.out.println("Resized");
-                //screenPanel.paint(g);
-            }
-        });
-
-        save.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onTest();
-            }
-        });
-
-        load.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                sol.reset();
-                FileHandler loader = new FileHandler("file.txt");
-                ArrayList<Integer> data = loader.load();
-                int i = 1;
-                for (int j = 0; j < data.get(0); j++) {
-                    sol.addVertex();
-                }
-                for (int j = 1; j < data.size(); j++) {
-                    if (data.get(j) != -1) {
-                        sol.addEdge(i, data.get(j), data.get(j + 1));
-                        j++;
-                        continue;
-                    }
-                    i++;
-                }
-                annotationsLabel.setText("Число вершин: " + data.get(0));
-                beginButton.setEnabled(true);
-                //stepButton.setEnabled(false);
-            }
-        });
-
-        beginButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                beginButton.setEnabled(false);
-                sol.setInit(1);
-                stepButton.setEnabled(true);
-            }
-        });
-
-        resetButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onTest();
-            }
-        });
-
-        clearButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onTest();
-            }
-        });
-
-        quitButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onTest();
-            }
-        });
-
-        autoButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onTest();
-            }
-        });
-
-        stepButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                CustomLogger logger = new CustomLogger(1);
-                if (!sol.step(logger)) {
-                    stepButton.setEnabled(false);
-                    beginButton.setEnabled(false);
-                    return;
-                }
-                annotationsLabel.setText(logger.getNextMessage());
-            }
-        });
-
-        beginButton.setEnabled(false);
-        stepButton.setEnabled(false);
-        save.setEnabled(false);
-        resetButton.setEnabled(false);
-        clearButton.setEnabled(false);
-        autoButton.setEnabled(false);
-        approveButton.setEnabled(false);
     }
 
-    private void onTest() {
-        // add your code here
-        dispose();
+    private void createMenu(){
+        // Инициализация меню
+
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("Файл");
+        JMenuItem loadButton = new JMenuItem("Загрузить");
+        JMenuItem saveButton = new JMenuItem("Сохранить");
+        JMenuItem closeButton = new JMenuItem("Закрыть");
+        closeButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                dispose();
+                super.mouseReleased(e);
+            }
+        });
+        fileMenu.add(loadButton);
+        fileMenu.add(saveButton);
+        fileMenu.add(closeButton);
+        menuBar.add(fileMenu);
+        menuBar.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        menuBar.setMaximumSize(new Dimension(800, 300));
+
+        // Ограничители меню
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        rootPanel.add(menuBar, gbc);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args){
         new Window();
     }
-
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// >>> IMPORTANT!! <<<
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
-    }
-
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * >>> IMPORTANT!! <<<
-     * DO NOT edit this method OR call it in your code!
-     *
-     * @noinspection ALL
-     */
-    private void $$$setupUI$$$() {
-        rootPanel = new JPanel();
-        rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(6, 3, new Insets(0, 0, 0, 0), -1, -1));
-        rootPanel.setBackground(new Color(-1));
-        basicPanel = new JPanel();
-        basicPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
-        basicPanel.setBackground(new Color(-7544966));
-        rootPanel.add(basicPanel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
-        beginButton = new JButton();
-        beginButton.setEnabled(true);
-        beginButton.setText("Begin");
-        basicPanel.add(beginButton, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        resetButton = new JButton();
-        resetButton.setText("Reset");
-        basicPanel.add(resetButton, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
-        basicPanel.add(spacer1, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        quitButton = new JButton();
-        quitButton.setText("Quit");
-        basicPanel.add(quitButton, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        clearButton = new JButton();
-        clearButton.setText("Clear");
-        basicPanel.add(clearButton, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        settingsPanel = new JPanel();
-        settingsPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 2, new Insets(0, 0, 0, 0), -1, -1));
-        settingsPanel.setBackground(new Color(-2169993));
-        rootPanel.add(settingsPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 6, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(100, 50), null, null, 0, false));
-        settingsPanel.setBorder(BorderFactory.createTitledBorder(null, "", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        autoButton = new JButton();
-        autoButton.setText("Auto");
-        settingsPanel.add(autoButton, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final com.intellij.uiDesigner.core.Spacer spacer2 = new com.intellij.uiDesigner.core.Spacer();
-        settingsPanel.add(spacer2, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, 1, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        stepButton = new JButton();
-        stepButton.setText("Step");
-        settingsPanel.add(stepButton, new com.intellij.uiDesigner.core.GridConstraints(4, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        settingsLabel = new JLabel();
-        settingsLabel.setHorizontalAlignment(0);
-        settingsLabel.setText("Settings");
-        settingsPanel.add(settingsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField = new JTextField();
-        settingsPanel.add(textField, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        approveButton = new JButton();
-        approveButton.setText("Approve");
-        settingsPanel.add(approveButton, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        screenPanel = new JPanel();
-        screenPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        screenPanel.setBackground(new Color(-6817537));
-        rootPanel.add(screenPanel, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 4, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        screenPanel.setBorder(BorderFactory.createTitledBorder(null, "Screen Panel", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        annotationsPanel = new JPanel();
-        annotationsPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        annotationsPanel.setBackground(new Color(-2120801));
-        rootPanel.add(annotationsPanel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTH, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        annotationsPanel.setBorder(BorderFactory.createTitledBorder(null, "Annotations", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        annotationsLabel = new JLabel();
-        annotationsLabel.setText("Annotations text");
-        annotationsPanel.add(annotationsLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    public JComponent $$$getRootComponent$$$() {
-        return rootPanel;
-    }
-
 }
