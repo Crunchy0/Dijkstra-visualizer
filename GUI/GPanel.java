@@ -13,22 +13,22 @@ public class GPanel extends JPanel {
     private final int RADIUS = 20;
     private final ArrayList<VisualVertex> circles;
     private final ArrayList<VisualEdge> edges;
-
     private VisualEdge edgeDrawn;
     private VisualEdge chosenEdge;
     private VisualVertex chosenCircle;
     private VisualVertex consideredCircle;
-
+    private VisualVertex draggingCircle;
     boolean drawingEdge = false;
-    private Boolean ec;
+    boolean holdingCircle = false;
+    boolean dragged = false;
 
-    public GPanel(Solver solver, Boolean edgeChosen){
+    public GPanel(Solver solver){
         super();
 
         circles = new ArrayList<VisualVertex>(2);
         edges = new ArrayList<VisualEdge>(2);
 
-        ec = edgeChosen;
+        draggingCircle = null;
         chosenCircle = null;
         consideredCircle = null;
 
@@ -98,10 +98,8 @@ public class GPanel extends JPanel {
                     else{
                         chosenEdge = null;
                     }
-                    ec = !(chosenEdge == null);
                     getParent().repaint();
                 }
-
                 super.mouseClicked(e);
             }
 
@@ -113,11 +111,18 @@ public class GPanel extends JPanel {
                     edgeDrawn = new VisualEdge (vertex, vertex);
                     getParent().repaint();
                 }
+                draggingCircle = chooseCircle(e.getX(),e.getY());
+                if(draggingCircle != null)
+                    holdingCircle = true;
+                //System.out.println("mouse pressed");
+
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+                //System.out.println("Released!");
+                holdingCircle = false;
                 if(drawingEdge && edgeDrawn != null && (e.getX() != edgeDrawn.getV1().getX() || e.getY() != edgeDrawn.getV1().getY())) {
                     boolean isInFirst = false;
                     boolean isInSecond = false;
@@ -150,18 +155,7 @@ public class GPanel extends JPanel {
                             }
                         }
                         if(!exists){
-                            int newWidth = (int)Math.sqrt((Math.pow(edgeDrawn.getV2().getX() - edgeDrawn.getV1().getX(),2))
-                                    + (Math.pow(edgeDrawn.getV2().getY() - edgeDrawn.getV1().getY(),2)));
-                            int newX = (edgeDrawn.getV2().getX() + edgeDrawn.getV1().getX())/2 - newWidth/2;
-                            int newY = (edgeDrawn.getV2().getY() + edgeDrawn.getV1().getY())/2 - 1;
-                            int dX = edgeDrawn.getV2().getX() - edgeDrawn.getV1().getX();
-                            int dY = edgeDrawn.getV2().getY() - edgeDrawn.getV1().getY();
-                            Rectangle rect = new Rectangle(newX, newY, newWidth, 3);
-                            AffineTransform at = new AffineTransform();
-                            at.rotate(Math.atan((double)dY/dX), newX + (float)newWidth/2, newY + 1.5f);
-                            Shape shape = at.createTransformedShape(rect);
-
-                            edgeDrawn.setLine(shape);
+                            setShape(edgeDrawn);
                             edges.add(edgeDrawn);
                         }
                         else {
@@ -169,6 +163,7 @@ public class GPanel extends JPanel {
                         }
                     }
                 }
+
                 edgeDrawn = null;
                 getParent().repaint();
             }
@@ -194,9 +189,33 @@ public class GPanel extends JPanel {
                 if(drawingEdge && edgeDrawn != null) {
                     edgeDrawn.setV2(new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK));
                 }
-                else{
+                else
                     edgeDrawn = null;
+
+                if (holdingCircle && !drawingEdge){
+                    dragged = false;
+                    for(VisualEdge edge : edges){
+                        if(edge.getV1().getX() == draggingCircle.getX() && edge.getV1().getY() == draggingCircle.getY()){
+                            draggingCircle.setX(e.getX());
+                            draggingCircle.setY(e.getY());
+                            edge.setV1(draggingCircle);
+                            setShape(edge);
+                            dragged = true;
+                        }
+                        if(edge.getV2().getX() == draggingCircle.getX() && edge.getV2().getY() == draggingCircle.getY()){
+                            draggingCircle.setX(e.getX());
+                            draggingCircle.setY(e.getY());
+                            edge.setV2(draggingCircle);
+                            setShape(edge);
+                            dragged = true;
+                        }
+                    }
+                    if (!dragged){
+                        draggingCircle.setX(e.getX());
+                        draggingCircle.setY(e.getY());
+                    }
                 }
+                System.out.println("mouse dragged");
                 getParent().repaint();
             }
         });
@@ -248,6 +267,21 @@ public class GPanel extends JPanel {
         }
     }
 
+    public void setShape(VisualEdge edgeDrawn){
+        int newWidth = (int)Math.sqrt((Math.pow(edgeDrawn.getV2().getX() - edgeDrawn.getV1().getX(),2))
+                + (Math.pow(edgeDrawn.getV2().getY() - edgeDrawn.getV1().getY(),2)));
+        int newX = (edgeDrawn.getV2().getX() + edgeDrawn.getV1().getX())/2 - newWidth/2;
+        int newY = (edgeDrawn.getV2().getY() + edgeDrawn.getV1().getY())/2 - 1;
+        int dX = edgeDrawn.getV2().getX() - edgeDrawn.getV1().getX();
+        int dY = edgeDrawn.getV2().getY() - edgeDrawn.getV1().getY();
+        Rectangle rect = new Rectangle(newX, newY, newWidth, 3);
+        AffineTransform at = new AffineTransform();
+        at.rotate(Math.atan((double)dY/dX), newX + (float)newWidth/2, newY + 1.5f);
+        Shape shape = at.createTransformedShape(rect);
+
+        edgeDrawn.setLine(shape);
+    }
+
     public void otladka(){
         System.out.println("Текущее состояние графа:");
         for(VisualVertex vertex: circles) {
@@ -258,7 +292,7 @@ public class GPanel extends JPanel {
         }
     }
 
-  public void paintComponent(Graphics g2){
+    public void paintComponent(Graphics g2){
         Graphics2D g = (Graphics2D)g2;
         super.paintComponent(g);
         for(VisualEdge e : edges){

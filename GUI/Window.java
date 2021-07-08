@@ -20,12 +20,9 @@ class AutoMode extends Thread{
     }
 
     public void run(){
-        ArrayList<String> messages = new ArrayList<String>();
         boolean running = solver.step(logger);
         while(running) {
-            String message = logger.getNextMessage();
-            messages.add(message);
-            textArea.setText(message);
+            textArea.setText(logger.getNextMessage());
             try {
                 Thread.sleep(2000);
             }
@@ -34,22 +31,17 @@ class AutoMode extends Thread{
             }
             running = solver.step(logger);
         }
-        textArea.setText("");
-        for(String m : messages){
-            textArea.setText(textArea.getText() + m + "\n\n");
-        }
     }
 }
 
 public class Window extends JFrame{
-    private final Boolean edgeChosen = false;
     private final Solver solver = new Solver();
     private final  CustomLogger logger = new CustomLogger(10);
     private final JPanel rootPanel = new JPanel();
     private final JPanel annotationsPanel = new JPanel();
     private final JPanel bottomPanel = new JPanel();
     private final JPanel settingsPanel = new JPanel();
-    private final GPanel canvasPanel = new GPanel(solver, edgeChosen);
+    private final GPanel canvasPanel = new GPanel(solver);
     private final TextArea textArea = new TextArea();
     private final JTextField textField = new JTextField();
     private final JLabel infoLabel = new JLabel("Информация");
@@ -119,7 +111,6 @@ public class Window extends JFrame{
                 canvasPanel.deleteEdge();
             }
         });
-
 
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -266,7 +257,6 @@ public class Window extends JFrame{
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets.set(0,3,3,0);
         rootPanel.add(bottomPanel, gbc);
-
         // Настройка компонента 0 уровня (окна)
 
         setTitle("Алгоритм Дейкстры");
@@ -292,20 +282,19 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                FileHandler fh = new FileHandler();
+                FileHandler fh = new FileHandler("file.txt");
                 ArrayList<Integer> loaded =  fh.load();
-                if(!loaded.isEmpty()) {
-                    int number = loaded.get(0);
-                    int vId = 1;
-                    for (int i = 0; i < number; i++) {
-                        solver.addVertex();
+                int number = loaded.get(0);
+                int vId = 1;
+                for(int i = 0; i < number; i++){
+                    solver.addVertex();
+                }
+                for(int j = 1; j < loaded.size(); j++){
+                    if(loaded.get(j) == -1){
+                        vId++;
                     }
-                    for (int j = 1; j < loaded.size(); j++) {
-                        if (loaded.get(j) == -1) {
-                            vId++;
-                        } else {
-                            solver.addEdge(vId, loaded.get(j++), loaded.get(j));
-                        }
+                    else{
+                        solver.addEdge(vId, loaded.get(j++), loaded.get(j));
                     }
                 }
             }
