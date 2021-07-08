@@ -25,6 +25,10 @@ public class VisualVertex {
         this.color = color;
     }
 
+    public void setId(int id){
+        this.id = id;
+    }
+
     public int getX(){
         return this.x;
     }
