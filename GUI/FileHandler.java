@@ -1,12 +1,13 @@
+import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class FileHandler {
-    private final File file;
+    private File file;
 
-    public FileHandler(String path){
-        file = new File(path);
+    public FileHandler(){
+        file = null;
     }
 
     public void save(){
@@ -19,8 +20,11 @@ public class FileHandler {
     }
 
     public ArrayList<Integer> load(){
+        JFileChooser chooser = new JFileChooser();
+        chooser.showDialog(null, "Загрузить");
+        file = chooser.getSelectedFile();
         ArrayList<Integer> input = new ArrayList<Integer>();
-        try (FileReader fr = new FileReader(file);){
+        try{
             Scanner scanner = new Scanner(file);
             String next = scanner.next();
             while(scanner.hasNext()){
