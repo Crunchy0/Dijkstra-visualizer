@@ -13,14 +13,12 @@ public class GPanel extends JPanel {
     private final int RADIUS = 20;
     private final ArrayList<VisualVertex> circles;
     private final ArrayList<VisualEdge> edges;
-<<<<<<< Updated upstream
-    private VisualEdge curEdge;
-=======
+
     private VisualEdge edgeDrawn;
     private VisualEdge chosenEdge;
     private VisualVertex chosenCircle;
     private VisualVertex consideredCircle;
->>>>>>> Stashed changes
+
     boolean drawingEdge = false;
     private Boolean ec;
 
@@ -30,13 +28,10 @@ public class GPanel extends JPanel {
         circles = new ArrayList<VisualVertex>(2);
         edges = new ArrayList<VisualEdge>(2);
 
-<<<<<<< Updated upstream
-=======
         ec = edgeChosen;
         chosenCircle = null;
         consideredCircle = null;
 
->>>>>>> Stashed changes
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -73,8 +68,6 @@ public class GPanel extends JPanel {
                         getParent().repaint();
                     }
                 }
-<<<<<<< Updated upstream
-=======
                 else if((e.getClickCount() == 1) && (e.getButton() == 1)){
                     chosenCircle = chooseCircle(e.getX(), e.getY());
                     if(chosenCircle == null){
@@ -108,7 +101,7 @@ public class GPanel extends JPanel {
                     ec = !(chosenEdge == null);
                     getParent().repaint();
                 }
->>>>>>> Stashed changes
+
                 super.mouseClicked(e);
             }
 
@@ -218,9 +211,6 @@ public class GPanel extends JPanel {
         getParent().repaint();
     }
 
-<<<<<<< Updated upstream
-    public void paintComponent(Graphics g){
-=======
     private VisualVertex chooseCircle(int x, int y) //........
     {
         for (VisualVertex vertex : circles) {
@@ -268,9 +258,8 @@ public class GPanel extends JPanel {
         }
     }
 
-    public void paintComponent(Graphics g2){
+  public void paintComponent(Graphics g2){
         Graphics2D g = (Graphics2D)g2;
->>>>>>> Stashed changes
         super.paintComponent(g);
         for(VisualEdge e : edges){
             g.setColor(Color.BLACK);
@@ -293,8 +282,6 @@ public class GPanel extends JPanel {
         if(edgeDrawn != null){
             g.drawLine(edgeDrawn.getV1().getX(), edgeDrawn.getV1().getY(), edgeDrawn.getV2().getX(), edgeDrawn.getV2().getY());
         }
-<<<<<<< Updated upstream
-=======
         if(consideredCircle != null){
             g.setColor(Color.RED);
             g.setStroke(new BasicStroke(3));
@@ -306,6 +293,5 @@ public class GPanel extends JPanel {
             g.setStroke(new BasicStroke(3));
             g.drawOval(chosenCircle.getX() - RADIUS, chosenCircle.getY() - RADIUS, RADIUS*2, RADIUS*2);
         }
->>>>>>> Stashed changes
     }
 }

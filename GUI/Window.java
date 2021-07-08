@@ -103,8 +103,6 @@ public class Window extends JFrame{
             }
         });
 
-<<<<<<< Updated upstream
-=======
         approveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
@@ -122,7 +120,7 @@ public class Window extends JFrame{
             }
         });
 
->>>>>>> Stashed changes
+
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
