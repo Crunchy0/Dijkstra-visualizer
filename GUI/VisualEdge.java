@@ -4,6 +4,7 @@ public class VisualEdge {
     private VisualVertex v1;
     private VisualVertex v2;
     private Shape line = null;
+    private int weight = 1;
 
     public VisualEdge(VisualVertex v1, VisualVertex v2){
         this.v1 = v1;
@@ -26,6 +27,10 @@ public class VisualEdge {
         this.line = shape;
     }
 
+    public void setWeight(int w){
+        this.weight = w;
+    }
+
     public VisualVertex getV1(){
         return this.v1;
     }
@@ -36,5 +41,9 @@ public class VisualEdge {
 
     public Shape getLine(){
         return this.line;
+    }
+
+    public int getWeight(){
+        return this.weight;
     }
 }

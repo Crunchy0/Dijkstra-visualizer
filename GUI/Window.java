@@ -1,9 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -11,41 +8,97 @@ class AutoMode extends Thread{
     private Solver solver;
     private CustomLogger logger;
     private TextArea textArea;
+    private GPanel canvas;
+    private JToggleButton autoButton;
+    private JButton stepButton;
+    private int period;
+    private boolean active = true;
+    private boolean alive = true;
 
-    public AutoMode(Solver sol, CustomLogger log, TextArea ta){
+    public AutoMode(Solver sol, CustomLogger log, TextArea ta, GPanel canvas, JToggleButton ab, JButton sb, int period){
         super();
         this.solver = sol;
         this.logger = log;
         this.textArea = ta;
+        this.canvas = canvas;
+        this.autoButton = ab;
+        this.stepButton = sb;
+        this.period = period;
     }
 
-    public void run(){
-        ArrayList<String> messages = new ArrayList<String>();
-        boolean running = solver.step(logger);
-        while(running) {
-            String message = logger.getNextMessage();
-            messages.add(message);
-            textArea.setText(message);
-            try {
-                Thread.sleep(2000);
+    public void run() {
+        try {
+            boolean running = solver.step(logger);
+            canvas.getParent().repaint();
+            while (running) {
+                synchronized (this){
+                    if(!active){
+                        wait();
+                    }
+                }
+                if(!alive){
+                    alive = true;
+                    return;
+                }
+                textArea.append(logger.getNextMessage() + "\n\n");
+                try {
+                    Thread.sleep(period);
+                    synchronized (this){
+                        if(!active){
+                            wait();
+                        }
+                    }
+                    if(!alive){
+                        alive = true;
+                        return;
+                    }
+                    running = solver.step(logger);
+                    canvas.getParent().repaint();
+                } catch (InterruptedException e) {
+                    interrupt();
+                }
             }
-            catch(Exception e){
-                e.printStackTrace();
-            }
-            running = solver.step(logger);
         }
-        textArea.setText("");
-        for(String m : messages){
-            textArea.setText(textArea.getText() + m + "\n\n");
+        catch(InterruptedException e){
+            e.printStackTrace();
+        }
+        String results = "";
+        for(String s : solver.results()) {
+            results = results + s + "\n";
+        }
+        textArea.append("\nИтоги:\n" + results);
+        autoButton.setSelected(false);
+        autoButton.setEnabled(false);
+        stepButton.setEnabled(false);
+    }
+
+    public void disable(){
+        this.active = false;
+    }
+
+    public void enable(){
+        this.active = true;
+        synchronized (this) {
+            notify();
+        }
+    }
+
+    public void kill(){
+        alive = false;
+        synchronized (this){
+            notify();
         }
     }
 }
 
 public class Window extends JFrame{
+    private AutoMode thr;
     private final Boolean edgeChosen = false;
     private final Solver solver = new Solver();
     private final  CustomLogger logger = new CustomLogger(10);
     private final JPanel rootPanel = new JPanel();
+    private final JMenuItem saveButton = new JMenuItem("Сохранить");
+    private final JMenuItem loadButton = new JMenuItem("Загрузить");
     private final JPanel annotationsPanel = new JPanel();
     private final JPanel bottomPanel = new JPanel();
     private final JPanel settingsPanel = new JPanel();
@@ -57,7 +110,7 @@ public class Window extends JFrame{
     private final JButton setTimeButton = new JButton("Задать интервал");
     private final JButton setButton = new JButton("Применить");
     private final JButton deleteButton = new JButton("Удалить");
-    private final JButton autoButton = new JButton("Авто");
+    private final JToggleButton autoButton = new JToggleButton("Авто");
     private final JButton stepButton = new JButton("Шаг");
     private final JButton beginButton = new JButton("Начать");
     private final JButton resetButton = new JButton("Сброс");
@@ -78,7 +131,7 @@ public class Window extends JFrame{
 
         textArea.setEditable(false);
         textArea.setPreferredSize(new Dimension(50, 80));
-        textArea.setText("З\nА\nГ\nЛ\nУ\nШ\nК\nА");
+        textArea.setText("");
         textArea.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -97,9 +150,39 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+                //canvasPanel.solverInit();
                 solver.setInit(1);
+                beginButton.setEnabled(false);
+                resetButton.setEnabled(true);
+                clearButton.setEnabled(false);
+                autoButton.setEnabled(true);
                 stepButton.setEnabled(true);
-                execute();
+                saveButton.setEnabled(false);
+                loadButton.setEnabled(false);
+                onEdgeUnchoice();
+                canvasPanel.getParent().repaint();
+            }
+        });
+
+        resetButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                solver.reset();
+                if(thr != null && thr.isAlive()){
+                    thr.kill();
+                    thr.enable();
+                }
+                textArea.setText("");
+                canvasPanel.getParent().repaint();
+                resetButton.setEnabled(false);
+                beginButton.setEnabled(true);
+                clearButton.setEnabled(true);
+                autoButton.setEnabled(false);
+                autoButton.setSelected(false);
+                stepButton.setEnabled(false);
+                saveButton.setEnabled(true);
+                loadButton.setEnabled(true);
             }
         });
 
@@ -111,20 +194,56 @@ public class Window extends JFrame{
             }
         });
 
+        setButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                canvasPanel.setEdgeWeight(Integer.parseInt(textField.getText()));
+            }
+        });
+
         deleteButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+                infoLabel.setText("Информация");
+                deleteButton.setVisible(false);
+                textField.setVisible(false);
+                setButton.setVisible(false);
                 canvasPanel.deleteVertex();
                 canvasPanel.deleteEdge();
             }
         });
 
+        autoButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED){
+                    stepButton.setEnabled(false);
+                    if(thr == null){
+                        thr = new AutoMode(solver, logger, textArea, canvasPanel, autoButton, stepButton, 2000);
+                    }
+                    if(thr.isAlive()) {
+                        thr.enable();
+                    }
+                    else{
+                        thr = new AutoMode(solver, logger, textArea, canvasPanel, autoButton, stepButton, 2000);
+                        thr.start();
+                    }
+                }
+                else if(e.getStateChange() == ItemEvent.DESELECTED){
+                    thr.disable();
+                    stepButton.setEnabled(true);
+                }
+            }
+        });
 
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+                onGraphEmpty();
+                onEdgeUnchoice();
                 solver.clear();
                 canvasPanel.clear();
             }
@@ -134,6 +253,9 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+                if(thr != null && thr.isAlive()){
+                    thr.kill();
+                }
                 dispose();
             }
         });
@@ -143,8 +265,23 @@ public class Window extends JFrame{
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                /*solver.step(logger);
-                textArea.setText(logger.getNextMessage());*/
+                boolean running = solver.step(logger);
+                if(!running){
+                    if(thr != null && thr.isAlive()) {
+                        thr.kill();
+                    }
+                    String results = "";
+                    for(String s : solver.results()) {
+                        results = results + s + "\n\n";
+                    }
+                    textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
+                    autoButton.setEnabled(false);
+                    stepButton.setEnabled(false);
+                }
+                else{
+                    textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");
+                }
+                canvasPanel.getParent().repaint();
             }
         });
 
@@ -276,8 +413,17 @@ public class Window extends JFrame{
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         add(rootPanel);
         setContentPane(rootPanel);
+        saveButton.setEnabled(false);
+        beginButton.setEnabled(false);
+        clearButton.setEnabled(false);
         approveButton.setVisible(false);
         setTimeButton.setVisible(false);
+        setButton.setVisible(false);
+        deleteButton.setVisible(false);
+        textField.setVisible(false);
+        autoButton.setEnabled(false);
+        stepButton.setEnabled(false);
+        resetButton.setEnabled(false);
         pack();
         setVisible(true);
     }
@@ -287,30 +433,20 @@ public class Window extends JFrame{
 
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("Файл");
-        JMenuItem loadButton = new JMenuItem("Загрузить");
         loadButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                FileHandler fh = new FileHandler();
-                ArrayList<Integer> loaded =  fh.load();
-                if(!loaded.isEmpty()) {
-                    int number = loaded.get(0);
-                    int vId = 1;
-                    for (int i = 0; i < number; i++) {
-                        solver.addVertex();
-                    }
-                    for (int j = 1; j < loaded.size(); j++) {
-                        if (loaded.get(j) == -1) {
-                            vId++;
-                        } else {
-                            solver.addEdge(vId, loaded.get(j++), loaded.get(j));
-                        }
-                    }
-                }
+                canvasPanel.load();
             }
         });
-        JMenuItem saveButton = new JMenuItem("Сохранить");
+        saveButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                canvasPanel.save();
+            }
+        });
         JMenuItem closeButton = new JMenuItem("Закрыть");
         closeButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -337,20 +473,35 @@ public class Window extends JFrame{
         rootPanel.add(menuBar, gbc);
     }
 
-    public void execute(){
-        /*boolean running = solver.step(logger);
-        while(running) {
-            textArea.setText(logger.getNextMessage());
-            try {
-                Thread.sleep(2000);
-            }
-            catch(Exception e){
-                System.out.println("Something went wrong");
-            }
-            running = solver.step(logger);
-        }*/
-        AutoMode thr = new AutoMode(solver, logger, textArea);
-        thr.start();
+    public void onVertexChoice(int id){
+        infoLabel.setText("Выбрана вершина " + id);
+        deleteButton.setVisible(true);
+    }
+
+    public void onEdgeChoice(int weight){
+        infoLabel.setText("<html>Задать вес ребра /<br>удалить ребро</html>");
+        deleteButton.setVisible(true);
+        textField.setText(Integer.toString(weight));
+        textField.setVisible(true);
+        setButton.setVisible(true);
+    }
+
+    public void onEdgeUnchoice(){
+        infoLabel.setText("Информация");
+        textField.setVisible(false);
+        setButton.setVisible(false);
+        deleteButton.setVisible(false);
+    }
+
+    public void onGraphNotEmpty(){
+        saveButton.setEnabled(true);
+        beginButton.setEnabled(true);
+        clearButton.setEnabled(true);
+    }
+    public void onGraphEmpty(){
+        saveButton.setEnabled(false);
+        beginButton.setEnabled(false);
+        clearButton.setEnabled(false);
     }
 
     public static void main(String[] args){

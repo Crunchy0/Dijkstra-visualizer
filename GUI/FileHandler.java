@@ -10,12 +10,25 @@ public class FileHandler {
         file = null;
     }
 
-    public void save(){
-        try {
-            boolean created = file.createNewFile();
-        }
-        catch (IOException e){
-            // handler
+    public void save(ArrayList<VisualVertex> vertices, ArrayList<VisualEdge> edges) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.showDialog(null, "Сохранить");
+        file = chooser.getSelectedFile();
+        try (FileWriter fw = new FileWriter(file)) {
+            fw.write(vertices.size() + "\n");
+            for(VisualVertex v : vertices){
+                fw.write(v.getX() + " " + v.getY() + "\n");
+            }
+            int vId = 1;
+            for(VisualEdge e : edges){
+                while(e.getV1().getId() != vId){
+                    vId++;
+                    fw.write("/\n");
+                }
+                fw.write(e.getV2().getId() + " " + e.getWeight() + "\n");
+            }
+        } catch (IOException e) {
+            System.out.println("Something went wrong");
         }
     }
 
