@@ -399,10 +399,10 @@ public class GPanel extends JPanel {
                 pLen = Integer.toString(pathLen);
             }
             switch (color){
-                case COLOR1 -> col = Color.GREEN;
+                case COLOR1 -> col = Color.WHITE;//Было GREEN
                 case COLOR2 -> col = Color.PINK;
                 case COLOR3 -> col = Color.ORANGE;
-                case COLOR4 -> col = Color.BLUE;
+                case COLOR4 -> col = Color.GREEN;//Было BLUE
             }
             g.setColor(col);
             //g.setColor(p.getColor());

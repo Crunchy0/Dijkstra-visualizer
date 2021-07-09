@@ -157,8 +157,8 @@ public class Window extends JFrame{
                 clearButton.setEnabled(false);
                 autoButton.setEnabled(true);
                 stepButton.setEnabled(true);
-                saveButton.setEnabled(false);
-                loadButton.setEnabled(false);
+                saveButton.setEnabled(true);//Было false
+                loadButton.setEnabled(true);//Было false
                 onEdgeUnchoice();
                 canvasPanel.getParent().repaint();
             }
@@ -264,24 +264,27 @@ public class Window extends JFrame{
         stepButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+                if (stepButton.isEnabled()) {
+                    super.mouseClicked(e);
                 boolean running = solver.step(logger);
-                if(!running){
-                    if(thr != null && thr.isAlive()) {
+                if (!running) {
+                    if (thr != null && thr.isAlive()) {
                         thr.kill();
                     }
                     String results = "";
-                    for(String s : solver.results()) {
+                    for (String s : solver.results()) {
                         results = results + s + "\n\n";
                     }
-                    textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
+                    textArea.append("\nИтоги:\n" + results);//Добавляется строка вместо установки исходного текста
+                    //textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
                     autoButton.setEnabled(false);
                     stepButton.setEnabled(false);
-                }
-                else{
-                    textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");
+                } else {
+                    textArea.append(logger.getNextMessage() + "\n");//Вместо установки нового текста к исходному
+                    //textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");//добавляется строка
                 }
                 canvasPanel.getParent().repaint();
+            }
             }
         });
 
