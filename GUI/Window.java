@@ -102,7 +102,7 @@ public class Window extends JFrame{
     private final JPanel annotationsPanel = new JPanel();
     private final JPanel bottomPanel = new JPanel();
     private final JPanel settingsPanel = new JPanel();
-    private final GPanel canvasPanel = new GPanel(solver, edgeChosen);
+    private final GPanel canvasPanel = new GPanel(solver);
     private final TextArea textArea = new TextArea();
     private final JTextField textField = new JTextField();
     private final JLabel infoLabel = new JLabel("Информация");
@@ -403,7 +403,6 @@ public class Window extends JFrame{
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets.set(0,3,3,0);
         rootPanel.add(bottomPanel, gbc);
-
         // Настройка компонента 0 уровня (окна)
 
         setTitle("Алгоритм Дейкстры");

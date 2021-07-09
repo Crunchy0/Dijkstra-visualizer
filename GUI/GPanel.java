@@ -27,7 +27,7 @@ public class GPanel extends JPanel {
     boolean dragged = false;
     private Boolean ec;
 
-    public GPanel(Solver solver, Boolean edgeChosen){
+    public GPanel(Solver solver){
         super();
 
         this.solver = solver;
@@ -35,7 +35,7 @@ public class GPanel extends JPanel {
         circles = new ArrayList<VisualVertex>(2);
         edges = new ArrayList<VisualEdge>(2);
 
-        ec = edgeChosen;
+        draggingCircle = null;
         chosenCircle = null;
         consideredCircle = null;
         draggingCircle = null;
@@ -118,7 +118,6 @@ public class GPanel extends JPanel {
                     if(chosenCircle == null && chosenEdge == null){
                         window.onEdgeUnchoice();
                     }
-                    ec = !(chosenEdge == null);
                     getParent().repaint();
                 }
                 super.mouseClicked(e);
@@ -179,6 +178,7 @@ public class GPanel extends JPanel {
                         }
                     }
                 }
+
                 edgeDrawn = null;
                 getParent().repaint();
             }
@@ -204,9 +204,9 @@ public class GPanel extends JPanel {
                 if(drawingEdge && edgeDrawn != null) {
                     edgeDrawn.setV2(new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK));
                 }
-                else{
+                else
                     edgeDrawn = null;
-                }
+
                 if (holdingCircle && !drawingEdge){
                     dragged = false;
                     for(VisualEdge edge : edges){
