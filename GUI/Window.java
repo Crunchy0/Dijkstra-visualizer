@@ -150,6 +150,7 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
+<<<<<<< Updated upstream
                 //canvasPanel.solverInit();
                 solver.setInit(1);
                 beginButton.setEnabled(false);
@@ -157,10 +158,28 @@ public class Window extends JFrame{
                 clearButton.setEnabled(false);
                 autoButton.setEnabled(true);
                 stepButton.setEnabled(true);
-                saveButton.setEnabled(true);//Было false
-                loadButton.setEnabled(true);//Было false
+                saveButton.setEnabled(false);
+                loadButton.setEnabled(false);
                 onEdgeUnchoice();
                 canvasPanel.getParent().repaint();
+=======
+                if(beginButton.isEnabled()) {
+                    //canvasPanel.solverInit();
+                    beginButton.setEnabled(false);
+                    resetButton.setEnabled(true);
+                    clearButton.setEnabled(false);
+                    saveButton.setEnabled(false);//Было true
+                    loadButton.setEnabled(false);//Было true
+                    onEdgeUnchoice();
+                    infoLabel.setText("<html>Введите временной интервал<br>(в миллисекундах)</html>");
+                    textField.setText("");
+                    textField.setVisible(true);
+                    setTimeButton.setVisible(true);
+                    canvasPanel.unchoose();
+                    canvasPanel.setEditable(false);
+                    canvasPanel.getParent().repaint();
+                }
+>>>>>>> Stashed changes
             }
         });
 
@@ -168,21 +187,54 @@ public class Window extends JFrame{
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                solver.reset();
-                if(thr != null && thr.isAlive()){
-                    thr.kill();
-                    thr.enable();
+                if(resetButton.isEnabled()) {
+                    solver.reset();
+                    if (thr != null && thr.isAlive()) {
+                        thr.kill();
+                        thr.enable();
+                    }
+                    canvasPanel.finish();
+                    canvasPanel.setChoosingInit(false);
+                    textArea.setText("");
+                    infoLabel.setText("Информация");
+                    canvasPanel.getParent().repaint();
+                    resetButton.setEnabled(false);
+                    beginButton.setEnabled(true);
+                    clearButton.setEnabled(true);
+                    autoButton.setEnabled(false);
+                    autoButton.setSelected(false);
+                    stepButton.setEnabled(false);
+                    saveButton.setEnabled(true);
+                    loadButton.setEnabled(true);
+                    textField.setText("");
+                    textField.setVisible(false);
+                    setTimeButton.setVisible(false);
+                    approveButton.setVisible(false);
                 }
-                textArea.setText("");
-                canvasPanel.getParent().repaint();
-                resetButton.setEnabled(false);
-                beginButton.setEnabled(true);
-                clearButton.setEnabled(true);
-                autoButton.setEnabled(false);
-                autoButton.setSelected(false);
-                stepButton.setEnabled(false);
-                saveButton.setEnabled(true);
-                loadButton.setEnabled(true);
+            }
+        });
+
+        setTimeButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                super.mouseReleased(e);
+                try {
+                    int period = Integer.parseInt(textField.getText());
+                    if(period < 0){
+                        infoLabel.setText("Укажите неотрицательное число");
+                    }
+                    else {
+                        thr = new AutoMode(solver, logger, textArea, canvasPanel, autoButton, stepButton, period);
+                        infoLabel.setText("Выберите начальную вершину");
+                        textField.setVisible(false);
+                        setTimeButton.setVisible(false);
+                        approveButton.setVisible(true);
+                        canvasPanel.setChoosingInit(true);
+                    }
+                }
+                catch(NumberFormatException ex){
+                    infoLabel.setText("<html>Неверный формат,<br>введите заново</html>");
+                }
             }
         });
 
@@ -190,7 +242,16 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                canvasPanel.setMainVertex();
+                if (canvasPanel.start()){
+                    canvasPanel.setChoosingInit(false);
+                    infoLabel.setText("Информация");
+                    approveButton.setVisible(false);
+                    autoButton.setEnabled(true);
+                    stepButton.setEnabled(true);
+                }
+                else{
+                    infoLabel.setText("Вершина не выбрана");
+                }
             }
         });
 
@@ -198,7 +259,19 @@ public class Window extends JFrame{
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                canvasPanel.setEdgeWeight(Integer.parseInt(textField.getText()));
+                try{
+                    int weight = Integer.parseInt(textField.getText());
+                    if(weight < 1){
+                        infoLabel.setText("<html>Ребро должно иметь<br>положительный вес!</html>");
+                    }
+                    else {
+                        infoLabel.setText("<html>Задать вес ребра /<br>удалить ребро</html>");
+                        canvasPanel.setEdgeWeight(weight);
+                    }
+                }
+                catch (NumberFormatException ex){
+                    infoLabel.setText("<html>Неверный формат,<br>введите заново</html>");
+                }
             }
         });
 
@@ -218,22 +291,18 @@ public class Window extends JFrame{
         autoButton.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                if(e.getStateChange() == ItemEvent.SELECTED){
-                    stepButton.setEnabled(false);
-                    if(thr == null){
-                        thr = new AutoMode(solver, logger, textArea, canvasPanel, autoButton, stepButton, 2000);
+                if(autoButton.isEnabled()) {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
+                        stepButton.setEnabled(false);
+                        if (thr.isAlive()) {
+                            thr.enable();
+                        } else {
+                            thr.start();
+                        }
+                    } else if (e.getStateChange() == ItemEvent.DESELECTED) {
+                        thr.disable();
+                        stepButton.setEnabled(true);
                     }
-                    if(thr.isAlive()) {
-                        thr.enable();
-                    }
-                    else{
-                        thr = new AutoMode(solver, logger, textArea, canvasPanel, autoButton, stepButton, 2000);
-                        thr.start();
-                    }
-                }
-                else if(e.getStateChange() == ItemEvent.DESELECTED){
-                    thr.disable();
-                    stepButton.setEnabled(true);
                 }
             }
         });
@@ -241,11 +310,13 @@ public class Window extends JFrame{
         clearButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
-                super.mouseReleased(e);
-                onGraphEmpty();
-                onEdgeUnchoice();
-                solver.clear();
-                canvasPanel.clear();
+                if(clearButton.isEnabled()) {
+                    super.mouseReleased(e);
+                    onGraphEmpty();
+                    onEdgeUnchoice();
+                    solver.clear();
+                    canvasPanel.clear();
+                }
             }
         });
 
@@ -264,27 +335,47 @@ public class Window extends JFrame{
         stepButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (stepButton.isEnabled()) {
-                    super.mouseClicked(e);
+                super.mouseClicked(e);
+<<<<<<< Updated upstream
                 boolean running = solver.step(logger);
-                if (!running) {
-                    if (thr != null && thr.isAlive()) {
+                if(!running){
+                    if(thr != null && thr.isAlive()) {
                         thr.kill();
                     }
                     String results = "";
-                    for (String s : solver.results()) {
+                    for(String s : solver.results()) {
                         results = results + s + "\n\n";
                     }
-                    textArea.append("\nИтоги:\n" + results);//Добавляется строка вместо установки исходного текста
-                    //textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
+                    textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
                     autoButton.setEnabled(false);
                     stepButton.setEnabled(false);
-                } else {
-                    textArea.append(logger.getNextMessage() + "\n");//Вместо установки нового текста к исходному
-                    //textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");//добавляется строка
+                }
+                else{
+                    textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");
                 }
                 canvasPanel.getParent().repaint();
-            }
+=======
+                if (stepButton.isEnabled()) {
+                    boolean running = solver.step(logger);
+                    if (!running) {
+                        if (thr != null && thr.isAlive()) {
+                            thr.kill();
+                        }
+                        String results = "";
+                        for (String s : solver.results()) {
+                            results = results + s + "\n\n";
+                        }
+                        textArea.append("\nИтоги:\n" + results);//Добавляется строка вместо установки исходного текста
+                        //textArea.setText(textArea.getText() + "\nИтоги:\n" + results);
+                        autoButton.setEnabled(false);
+                        stepButton.setEnabled(false);
+                    } else {
+                        textArea.append(logger.getNextMessage() + "\n");//Вместо установки нового текста к исходному
+                        //textArea.setText(textArea.getText() + logger.getNextMessage() + "\n");//добавляется строка
+                    }
+                    canvasPanel.getParent().repaint();
+                }
+>>>>>>> Stashed changes
             }
         });
 
@@ -439,14 +530,18 @@ public class Window extends JFrame{
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                canvasPanel.load();
+                if(loadButton.isEnabled()) {
+                    canvasPanel.load();
+                }
             }
         });
         saveButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                canvasPanel.save();
+                if(saveButton.isEnabled()) {
+                    canvasPanel.save();
+                }
             }
         });
         JMenuItem closeButton = new JMenuItem("Закрыть");

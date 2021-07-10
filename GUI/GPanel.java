@@ -25,7 +25,8 @@ public class GPanel extends JPanel {
     private VisualVertex draggingCircle;
     boolean holdingCircle = false;
     boolean dragged = false;
-    private Boolean ec;
+    private boolean isEditable = true;
+    private boolean choosingInit = false;
 
     public GPanel(Solver solver){
         super();
@@ -61,139 +62,148 @@ public class GPanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                Window window = (Window)getTopLevelAncestor();
-                if((e.getClickCount() == 2) && (e.getButton() == 1)){
-                    boolean intersects = false;
-                    for(VisualVertex v : circles){
-                        if((Math.pow((double)(e.getX() - v.getX()), 2) + Math.pow((double)(e.getY() - v.getY()), 2)) <
-                            Math.pow(2*(double)RADIUS, 2) + 10){
-                            intersects = true;
-                            break;
+                super.mouseClicked(e);
+                if(isEditable) {
+                    Window window = (Window) getTopLevelAncestor();
+                    if ((e.getClickCount() == 2) && (e.getButton() == 1)) {
+                        boolean intersects = false;
+                        for (VisualVertex v : circles) {
+                            if ((Math.pow((double) (e.getX() - v.getX()), 2) + Math.pow((double) (e.getY() - v.getY()), 2)) <
+                                    Math.pow(2 * (double) RADIUS, 2) + 10) {
+                                intersects = true;
+                                break;
+                            }
                         }
-                    }
-                    if(!intersects && !(e.getX() < RADIUS + 10 || e.getY() < RADIUS + 10
-                            || e.getX() > size().width - RADIUS - 10 || e.getY() > size().height - RADIUS - 10)) {
-                        circles.add(new VisualVertex(e.getX(), e.getY(), solver.addVertex(), Color.GREEN));
-                        if(circles.size() == 1){
-                            window.onGraphNotEmpty();
+                        if (!intersects && !(e.getX() < RADIUS + 10 || e.getY() < RADIUS + 10
+                                || e.getX() > size().width - RADIUS - 10 || e.getY() > size().height - RADIUS - 10)) {
+                            circles.add(new VisualVertex(e.getX(), e.getY(), solver.addVertex(), Color.GREEN));
+                            if (circles.size() == 1) {
+                                window.onGraphNotEmpty();
+                            }
+                            getParent().repaint();
+                        }
+                    } else if ((e.getClickCount() == 1) && (e.getButton() == 1)) {
+                        chosenCircle = chooseCircle(e.getX(), e.getY());
+                        if (chosenCircle == null) {
+                            ArrayList<VisualEdge> toChose = new ArrayList<VisualEdge>(5);
+                            for (VisualEdge edge : edges) {
+                                if (edge.getLine().contains(e.getX(), e.getY())) {
+                                    toChose.add(edge);
+                                }
+                            }
+                            double closeEnough = 0.0;
+                            if (toChose.isEmpty()) {
+                                chosenEdge = null;
+                            }
+                            for (VisualEdge edge : toChose) {
+                                double curDistToPoint = Math.sqrt(Math.pow(e.getX() - edge.getV1().getX(), 2) + Math.pow(e.getY() - edge.getV1().getY(), 2))
+                                        + Math.sqrt(Math.pow(e.getX() - edge.getV2().getX(), 2) + Math.pow(e.getY() - edge.getV2().getY(), 2));
+                                double diff = curDistToPoint - Math.sqrt(Math.pow(edge.getV2().getX() - edge.getV1().getX(), 2) + Math.pow(edge.getV2().getY() - edge.getV1().getY(), 2));
+                                if (closeEnough == 0.0) {
+                                    closeEnough = diff;
+                                    chosenEdge = edge;
+                                } else if (diff < closeEnough) {
+                                    closeEnough = diff;
+                                    chosenEdge = edge;
+                                }
+                            }
+                        } else {
+                            chosenEdge = null;
+                            window.onEdgeUnchoice();
+                            window.onVertexChoice(chosenCircle.getId());
+                        }
+                        if (chosenEdge != null) {
+                            window.onEdgeChoice(chosenEdge.getWeight());
+                        }
+                        if (chosenCircle == null && chosenEdge == null) {
+                            window.onEdgeUnchoice();
                         }
                         getParent().repaint();
                     }
                 }
-                else if((e.getClickCount() == 1) && (e.getButton() == 1)){
-                    chosenCircle = chooseCircle(e.getX(), e.getY());
-                    if(chosenCircle == null){
-                        ArrayList<VisualEdge> toChose = new ArrayList<VisualEdge>(5);
-                        for(VisualEdge edge : edges){
-                            if(edge.getLine().contains(e.getX(), e.getY())){
-                                toChose.add(edge);
-                            }
-                        }
-                        double closeEnough = 0.0;
-                        if(toChose.isEmpty()){
-                            chosenEdge = null;
-                        }
-                        for(VisualEdge edge : toChose){
-                            double curDistToPoint = Math.sqrt(Math.pow(e.getX() - edge.getV1().getX(),2) + Math.pow(e.getY() - edge.getV1().getY(),2))
-                                    + Math.sqrt(Math.pow(e.getX() - edge.getV2().getX(),2) + Math.pow(e.getY() - edge.getV2().getY(),2));
-                            double diff = curDistToPoint - Math.sqrt(Math.pow(edge.getV2().getX() - edge.getV1().getX(),2) + Math.pow(edge.getV2().getY() - edge.getV1().getY(),2));
-                            if(closeEnough == 0.0){
-                                closeEnough = diff;
-                                chosenEdge = edge;
-                            }
-                            else if(diff < closeEnough){
-                                closeEnough = diff;
-                                chosenEdge = edge;
-                            }
-                        }
-                    }
-                    else{
-                        chosenEdge = null;
-                        window.onEdgeUnchoice();
-                        window.onVertexChoice(chosenCircle.getId());
-                    }
-                    if(chosenEdge != null){
-                        window.onEdgeChoice(chosenEdge.getWeight());
-                    }
-                    if(chosenCircle == null && chosenEdge == null){
-                        window.onEdgeUnchoice();
-                    }
+                else if(choosingInit){
+                    consideredCircle = chooseCircle(e.getX(), e.getY());
                     getParent().repaint();
                 }
-                super.mouseClicked(e);
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
-                if(drawingEdge) {
-                    VisualVertex vertex = new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK);
-                    edgeDrawn = new VisualEdge (vertex, vertex);
-                    getParent().repaint();
+                if(isEditable) {
+                    if (drawingEdge) {
+                        VisualVertex vertex = new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK);
+                        edgeDrawn = new VisualEdge(vertex, vertex);
+                        getParent().repaint();
+                    }
+                    draggingCircle = chooseCircle(e.getX(), e.getY());
+                    if (draggingCircle != null)
+                        holdingCircle = true;
                 }
-                draggingCircle = chooseCircle(e.getX(),e.getY());
-                if(draggingCircle != null)
-                    holdingCircle = true;
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                holdingCircle = false;
-                if(drawingEdge && edgeDrawn != null && (e.getX() != edgeDrawn.getV1().getX() || e.getY() != edgeDrawn.getV1().getY())) {
-                    boolean isInFirst = false;
-                    boolean isInSecond = false;
-                    VisualVertex first = null;
-                    VisualVertex second = null;
-                    for(VisualVertex v : circles){
-                        if((Math.pow((double)(edgeDrawn.getV1().getX() - v.getX()), 2) + Math.pow((double)(edgeDrawn.getV1().getY() - v.getY()), 2)) < RADIUS*RADIUS){
-                            first = v;
-                            isInFirst = true;
-                        }
-                        if((Math.pow((double)(edgeDrawn.getV2().getX() - v.getX()), 2) + Math.pow((double)(edgeDrawn.getV2().getY() - v.getY()), 2)) < RADIUS*RADIUS){
-                            second = v;
-                            isInSecond = true;
-                        }
-                    }
-                    if(isInFirst && isInSecond && first != second){
-                        if(first.getId() < second.getId()){
-                            edgeDrawn.setV1(first);
-                            edgeDrawn.setV2(second);
-                        }
-                        else{
-                            edgeDrawn.setV2(first);
-                            edgeDrawn.setV1(second);
-                        }
-                        boolean exists = false;
-                        for(VisualEdge edge: edges){
-                            if(edgeDrawn.equals(edge)){
-                                exists = true;
-                                break;
+                if(isEditable) {
+                    holdingCircle = false;
+                    if (drawingEdge && edgeDrawn != null && (e.getX() != edgeDrawn.getV1().getX() || e.getY() != edgeDrawn.getV1().getY())) {
+                        boolean isInFirst = false;
+                        boolean isInSecond = false;
+                        VisualVertex first = null;
+                        VisualVertex second = null;
+                        for (VisualVertex v : circles) {
+                            if ((Math.pow((double) (edgeDrawn.getV1().getX() - v.getX()), 2) + Math.pow((double) (edgeDrawn.getV1().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
+                                first = v;
+                                isInFirst = true;
+                            }
+                            if ((Math.pow((double) (edgeDrawn.getV2().getX() - v.getX()), 2) + Math.pow((double) (edgeDrawn.getV2().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
+                                second = v;
+                                isInSecond = true;
                             }
                         }
-                        if(!exists){
-                            setShape(edgeDrawn);
-                            edges.add(edgeDrawn);
-                            solver.addEdge(edgeDrawn.getV1().getId(), edgeDrawn.getV2().getId(), edgeDrawn.getWeight());
+                        if (isInFirst && isInSecond && first != second) {
+                            if (first.getId() < second.getId()) {
+                                edgeDrawn.setV1(first);
+                                edgeDrawn.setV2(second);
+                            } else {
+                                edgeDrawn.setV2(first);
+                                edgeDrawn.setV1(second);
+                            }
+                            boolean exists = false;
+                            for (VisualEdge edge : edges) {
+                                if (edgeDrawn.equals(edge)) {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists) {
+                                setShape(edgeDrawn);
+                                edges.add(edgeDrawn);
+                                solver.addEdge(edgeDrawn.getV1().getId(), edgeDrawn.getV2().getId(), edgeDrawn.getWeight());
+                            }
                         }
                     }
+                    edgeDrawn = null;
+                    getParent().repaint();
                 }
-
-                edgeDrawn = null;
-                getParent().repaint();
             }
 
             @Override
             public void mouseEntered(MouseEvent e){
                 super.mouseEntered(e);
-                setFocusable(true);
-                requestFocusInWindow();
+                if(isEditable) {
+                    setFocusable(true);
+                    requestFocusInWindow();
+                }
             }
 
             public void mouseExited(MouseEvent e){
-                drawingEdge = false;
                 super.mouseExited(e);
-                setFocusable(false);
+                if(isEditable) {
+                    drawingEdge = false;
+                    setFocusable(false);
+                }
             }
         });
 
@@ -201,36 +211,37 @@ public class GPanel extends JPanel {
             @Override
             public void mouseDragged(MouseEvent e) {
                 super.mouseDragged(e);
-                if(drawingEdge && edgeDrawn != null) {
-                    edgeDrawn.setV2(new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK));
-                }
-                else
-                    edgeDrawn = null;
+                if(isEditable) {
+                    if (drawingEdge && edgeDrawn != null) {
+                        edgeDrawn.setV2(new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK));
+                    } else
+                        edgeDrawn = null;
 
-                if (holdingCircle && !drawingEdge){
-                    dragged = false;
-                    for(VisualEdge edge : edges){
-                        if(edge.getV1().getX() == draggingCircle.getX() && edge.getV1().getY() == draggingCircle.getY()){
+                    if (holdingCircle && !drawingEdge) {
+                        dragged = false;
+                        for (VisualEdge edge : edges) {
+                            if (edge.getV1().getX() == draggingCircle.getX() && edge.getV1().getY() == draggingCircle.getY()) {
+                                draggingCircle.setX(e.getX());
+                                draggingCircle.setY(e.getY());
+                                edge.setV1(draggingCircle);
+                                setShape(edge);
+                                dragged = true;
+                            }
+                            if (edge.getV2().getX() == draggingCircle.getX() && edge.getV2().getY() == draggingCircle.getY()) {
+                                draggingCircle.setX(e.getX());
+                                draggingCircle.setY(e.getY());
+                                edge.setV2(draggingCircle);
+                                setShape(edge);
+                                dragged = true;
+                            }
+                        }
+                        if (!dragged) {
                             draggingCircle.setX(e.getX());
                             draggingCircle.setY(e.getY());
-                            edge.setV1(draggingCircle);
-                            setShape(edge);
-                            dragged = true;
-                        }
-                        if(edge.getV2().getX() == draggingCircle.getX() && edge.getV2().getY() == draggingCircle.getY()){
-                            draggingCircle.setX(e.getX());
-                            draggingCircle.setY(e.getY());
-                            edge.setV2(draggingCircle);
-                            setShape(edge);
-                            dragged = true;
                         }
                     }
-                    if (!dragged){
-                        draggingCircle.setX(e.getX());
-                        draggingCircle.setY(e.getY());
-                    }
+                    getParent().repaint();
                 }
-                getParent().repaint();
             }
         });
     }
@@ -245,6 +256,11 @@ public class GPanel extends JPanel {
         getParent().repaint();
     }
 
+    public void unchoose(){
+        this.chosenCircle = null;
+        this.chosenEdge = null;
+    }
+
     private VisualVertex chooseCircle(int x, int y) //........
     {
         for (VisualVertex vertex : circles) {
@@ -255,9 +271,26 @@ public class GPanel extends JPanel {
         return null;
     }
 
-    public void setMainVertex(){
-        consideredCircle = chosenCircle;
-        chosenCircle = null;
+    public void setChoosingInit(boolean flag){
+        choosingInit = flag;
+    }
+
+    public void setEditable(boolean flag){
+        isEditable = flag;
+    }
+
+    public boolean start(){
+        if(consideredCircle == null){
+            return false;
+        }
+        solver.setInit(consideredCircle.getId());
+        getParent().repaint();
+        return true;
+    }
+
+    public void finish(){
+        consideredCircle = null;
+        isEditable = true;
         getParent().repaint();
     }
 
@@ -399,10 +432,14 @@ public class GPanel extends JPanel {
                 pLen = Integer.toString(pathLen);
             }
             switch (color){
-                case COLOR1 -> col = Color.WHITE;//Было GREEN
+                case COLOR1 -> col = Color.GREEN;
                 case COLOR2 -> col = Color.PINK;
                 case COLOR3 -> col = Color.ORANGE;
-                case COLOR4 -> col = Color.GREEN;//Было BLUE
+<<<<<<< Updated upstream
+                case COLOR4 -> col = Color.BLUE;
+=======
+                case COLOR4 -> col = Color.lightGray;//Было BLUE
+>>>>>>> Stashed changes
             }
             g.setColor(col);
             //g.setColor(p.getColor());

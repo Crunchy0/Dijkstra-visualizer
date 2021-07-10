@@ -1,16 +1,17 @@
-import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class FileHandler {
-    private File file;
+    private final File file;
 
+<<<<<<< Updated upstream
     public FileHandler(String path){
         file = new File(path);
-    }
+=======
     public FileHandler(){
         file = null;
+>>>>>>> Stashed changes
     }
 
     public void save(ArrayList<VisualVertex> vertices, ArrayList<VisualEdge> edges) {
@@ -36,11 +37,14 @@ public class FileHandler {
     }
 
     public ArrayList<Integer> load(){
+<<<<<<< Updated upstream
+=======
         JFileChooser chooser = new JFileChooser();
-        chooser.showDialog(null, "Сохранить");
+        chooser.showDialog(null, "Загрузить");
         file = chooser.getSelectedFile();
+>>>>>>> Stashed changes
         ArrayList<Integer> input = new ArrayList<Integer>();
-        try (FileReader fr = new FileReader(file);){
+        try{
             Scanner scanner = new Scanner(file);
             String next = scanner.next();
             while(scanner.hasNext()){

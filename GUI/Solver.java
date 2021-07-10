@@ -85,30 +85,10 @@ public class Solver {
                 current.setPathLen(0);
             }
             logger.addMessage(formInfo(current));
-            //Проверка на пустой список смежности (для отдельных вершин)
-            //{
-            if (current.getAdjList().isEmpty())
-                logger.addMessage("Смежных вершин нет!\n");
-            else
-                logger.addMessage("Рассматриваются смежные вершины: \n");
-            //}
+
             for(Map.Entry<Vertex, Integer> next : current.getAdjList().entrySet()){
-                //Проверка на то, что вершина рассмотрена
-                //{
-                if(next.getKey().getColor() == Colors.COLOR4)
-                    logger.addMessage("--Вершина " + next.getKey().getId() + " уже рассмотрена!\n");
-                //}
                 if((next.getKey().getColor() != Colors.COLOR4) &&
                         (current.getPathLen() + next.getValue() < next.getKey().getPathLen())){
-                    //Если длина пути меняется
-                    //{
-                    if (next.getKey().getPathLen() != 2147483647)
-                        logger.addMessage("--Длина пути для вершины " + next.getKey().getId() + " меняется c " +
-                                next.getKey().getPathLen() + " на " + (int)(current.getPathLen() + next.getValue()) + "\n");
-                    else
-                        logger.addMessage("--Длина пути для вершины " + next.getKey().getId() + " меняется c " +
-                                "\u221E" + " на " + (int)(current.getPathLen() + next.getValue()) + "\n");
-                    //}
                     next.getKey().setParent(current);
                     next.getKey().setPathLen(current.getPathLen() + next.getValue());
                     if(!(front.contains(next.getKey()))){
@@ -116,17 +96,7 @@ public class Solver {
                         front.add(next.getKey());
                     }
                 }
-                //Если длина пути остаётся прежней
-                //{
-                else {
-                    if ((next.getKey().getColor() != Colors.COLOR4) &&
-                            (current.getPathLen() + next.getValue() >= next.getKey().getPathLen())){
-                        logger.addMessage("--Для вершины " + next.getKey().getId() + " длина пути остается прежней\n");
-                    }
-                }
-                //}
             }
-            //logger.addMessage("\n");
             return true;
         }
         return false;
@@ -164,7 +134,7 @@ public class Solver {
                 par = par.getParent();
             }
             path = "Путь: " + path + v.getId() + "\n";
-            info = info + path + "Длина пути: " + Integer.toString(v.getPathLen()) + "\n";
+            info = info + path + "Длина пути: " + Integer.toString(v.getPathLen());
         }
         return info;
     }

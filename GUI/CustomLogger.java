@@ -17,31 +17,17 @@ public class CustomLogger {
         }
         this.messages.add(message);
     }
-//Новое получение сообщения
+
     public String getNextMessage(){
         if(this.isEndReached()){
             return "";
         }
-        StringBuilder ret = new StringBuilder();
-        for (;nextMessageIndex < (this.messages.size() - 1); nextMessageIndex++){
-            ret.append( this.messages.get(this.nextMessageIndex));
+        if(this.nextMessageIndex == (this.messages.size() - 1)){
+            this.endReached = true;
+            return this.messages.get(this.nextMessageIndex++);
         }
-
-        this.endReached = true;
-        ret.append( this.messages.get(this.nextMessageIndex++));
-        return ret.toString();
+        return this.messages.get(this.nextMessageIndex++);
     }
-//Исходное получение сообщения
-    //public String getNextMessage(){
-    //    if(this.isEndReached()){
-    //        return "";
-    //    }
-    //    if(this.nextMessageIndex == (this.messages.size() - 1)){
-    //        this.endReached = true;
-    //        return this.messages.get(this.nextMessageIndex++);
-    //    }
-    //    return this.messages.get(this.nextMessageIndex++);
-    //}
 
     public boolean isEndReached(){
         return this.endReached;
