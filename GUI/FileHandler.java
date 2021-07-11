@@ -1,20 +1,16 @@
+import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class FileHandler {
-    private final File file;
+    private File file;
 
-<<<<<<< Updated upstream
-    public FileHandler(String path){
-        file = new File(path);
-=======
     public FileHandler(){
         file = null;
->>>>>>> Stashed changes
     }
 
-    public void save(ArrayList<VisualVertex> vertices, ArrayList<VisualEdge> edges) {
+    public void save(ArrayList<VisualVertex> vertices, ArrayList<VisualEdge> edges) { // Сохранение в файл
         JFileChooser chooser = new JFileChooser();
         chooser.showDialog(null, "Сохранить");
         file = chooser.getSelectedFile();
@@ -31,19 +27,16 @@ public class FileHandler {
                 }
                 fw.write(e.getV2().getId() + " " + e.getWeight() + "\n");
             }
-        } catch (IOException e) {
-            System.out.println("Something went wrong");
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public ArrayList<Integer> load(){
-<<<<<<< Updated upstream
-=======
+    public ArrayList<Integer> load(){   // Загрузка из файла
         JFileChooser chooser = new JFileChooser();
         chooser.showDialog(null, "Загрузить");
         file = chooser.getSelectedFile();
->>>>>>> Stashed changes
-        ArrayList<Integer> input = new ArrayList<Integer>();
+        ArrayList<Integer> input = new ArrayList<>();
         try{
             Scanner scanner = new Scanner(file);
             String next = scanner.next();
@@ -63,11 +56,8 @@ public class FileHandler {
                 input.add(Integer.parseInt(next));
             }
         }
-        catch(FileNotFoundException e){
-            System.out.println("File not found");
-        }
-        catch (IOException e){
-            System.out.println("IO Exception");
+        catch(FileNotFoundException ex){
+            ex.printStackTrace();
         }
         return input;
     }

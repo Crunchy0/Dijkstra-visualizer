@@ -1,5 +1,6 @@
 import java.awt.*;
 
+// Ребро для отрисовки
 public class VisualEdge {
     private VisualVertex v1;
     private VisualVertex v2;

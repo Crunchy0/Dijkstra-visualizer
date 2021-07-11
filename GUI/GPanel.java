@@ -5,56 +5,51 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 
 public class GPanel extends JPanel {
 
-    private final Font FONT = new Font("TimesRoman", Font.BOLD, 14);
-    private final int RADIUS = 20;
-    private final Solver solver;
-    private final ArrayList<VisualVertex> circles;
-    private final ArrayList<VisualEdge> edges;
-    private VisualEdge edgeDrawn;
-    private VisualEdge chosenEdge;
-    private VisualVertex chosenCircle;
-    private VisualVertex consideredCircle;
-    boolean drawingEdge = false;
-    private VisualVertex draggingCircle;
-    boolean holdingCircle = false;
-    boolean dragged = false;
-    private boolean isEditable = true;
-    private boolean choosingInit = false;
+    private final Font FONT = new Font("TimesRoman", Font.BOLD, 14); // Шрифт надписей на вершинах
+    private final int RADIUS = 20; // Радиус вершин
+    private final Solver solver;    // Объект, выполняющий алгоритм
+    private final ArrayList<VisualVertex> vertices = new ArrayList<>(); // Список вершин
+    private final ArrayList<VisualEdge> edges = new ArrayList<>();  // Список рёбер
+    private VisualVertex chosenVertex = null;   // Выбранная вершина
+    private VisualVertex initVertex = null;     // Начальная вершина
+    private VisualVertex lastConsideredVertex = null;   // Последняя рассмотренная вершина
+    private VisualVertex draggedVertex = null;  // Перетаскиваемая вершина
+    private VisualEdge chosenEdge = null;   // Выбранное ребро
+    private VisualEdge drawnEdge = null;    // Рисуемое ребро
+    boolean drawingEdge = false;    // Режим рисования ребра
+    boolean holdingVertex = false;  // Вершина зажата/отпущена
+    boolean draggingVertex = false; // Режим перетаскивания вершин
+    private boolean isEditable = true;  // Режим редактирования графа
+    private boolean choosingInit = false;   // Режим выбора начальной вершины
 
-    public GPanel(Solver solver){
+    public GPanel(Solver sol){
         super();
 
-        this.solver = solver;
-
-        circles = new ArrayList<VisualVertex>(2);
-        edges = new ArrayList<VisualEdge>(2);
-
-        draggingCircle = null;
-        chosenCircle = null;
-        consideredCircle = null;
-        draggingCircle = null;
+        this.solver = sol;
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 super.keyPressed(e);
-                if(e.getKeyCode() == KeyEvent.VK_SHIFT){
-                    drawingEdge = true;
+                if(isEditable) {
+                    if (e.getKeyCode() == KeyEvent.VK_SHIFT) {  // Включение режима рисования ребра
+                        drawingEdge = true;
+                    }
                 }
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
                 super.keyReleased(e);
-                if(e.getKeyCode() == KeyEvent.VK_SHIFT){
-                    drawingEdge = false;
+                if(isEditable) {
+                    if (e.getKeyCode() == KeyEvent.VK_SHIFT) {  // Выключение режима рисования ребра
+                        drawingEdge = false;
+                    }
                 }
             }
         });
@@ -65,27 +60,27 @@ public class GPanel extends JPanel {
                 super.mouseClicked(e);
                 if(isEditable) {
                     Window window = (Window) getTopLevelAncestor();
-                    if ((e.getClickCount() == 2) && (e.getButton() == 1)) {
+                    if ((e.getClickCount() == 2) && (e.getButton() == 1)) { // Добавление вершины
                         boolean intersects = false;
-                        for (VisualVertex v : circles) {
-                            if ((Math.pow((double) (e.getX() - v.getX()), 2) + Math.pow((double) (e.getY() - v.getY()), 2)) <
+                        for (VisualVertex v : vertices) {
+                            if ((Math.pow((e.getX() - v.getX()), 2) + Math.pow((e.getY() - v.getY()), 2)) <
                                     Math.pow(2 * (double) RADIUS, 2) + 10) {
                                 intersects = true;
                                 break;
                             }
                         }
                         if (!intersects && !(e.getX() < RADIUS + 10 || e.getY() < RADIUS + 10
-                                || e.getX() > size().width - RADIUS - 10 || e.getY() > size().height - RADIUS - 10)) {
-                            circles.add(new VisualVertex(e.getX(), e.getY(), solver.addVertex(), Color.GREEN));
-                            if (circles.size() == 1) {
+                                || e.getX() > getSize().width - RADIUS - 10 || e.getY() > getSize().height - RADIUS - 10)) {
+                            vertices.add(new VisualVertex(e.getX(), e.getY(), solver.addVertex()));
+                            if (vertices.size() == 1) {
                                 window.onGraphNotEmpty();
                             }
-                            getParent().repaint();
                         }
-                    } else if ((e.getClickCount() == 1) && (e.getButton() == 1)) {
-                        chosenCircle = chooseCircle(e.getX(), e.getY());
-                        if (chosenCircle == null) {
-                            ArrayList<VisualEdge> toChose = new ArrayList<VisualEdge>(5);
+                    } else if ((e.getClickCount() == 1) && (e.getButton() == 1)) {  // Выбор вершины или ребра
+                        window.onUncheck();
+                        chosenVertex = chooseCircle(e.getX(), e.getY());
+                        if (chosenVertex == null) {
+                            ArrayList<VisualEdge> toChose = new ArrayList<>(5);
                             for (VisualEdge edge : edges) {
                                 if (edge.getLine().contains(e.getX(), e.getY())) {
                                     toChose.add(edge);
@@ -109,20 +104,16 @@ public class GPanel extends JPanel {
                             }
                         } else {
                             chosenEdge = null;
-                            window.onEdgeUnchoice();
-                            window.onVertexChoice(chosenCircle.getId());
+                            window.onVertexChoice(chosenVertex.getId());
                         }
                         if (chosenEdge != null) {
                             window.onEdgeChoice(chosenEdge.getWeight());
                         }
-                        if (chosenCircle == null && chosenEdge == null) {
-                            window.onEdgeUnchoice();
-                        }
-                        getParent().repaint();
                     }
+                    getParent().repaint();
                 }
                 else if(choosingInit){
-                    consideredCircle = chooseCircle(e.getX(), e.getY());
+                    initVertex = chooseCircle(e.getX(), e.getY());
                     getParent().repaint();
                 }
             }
@@ -131,14 +122,14 @@ public class GPanel extends JPanel {
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
                 if(isEditable) {
-                    if (drawingEdge) {
-                        VisualVertex vertex = new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK);
-                        edgeDrawn = new VisualEdge(vertex, vertex);
+                    if (drawingEdge) {  // Начать рисование ребра
+                        VisualVertex vertex = new VisualVertex(e.getX(), e.getY(), 0);
+                        drawnEdge = new VisualEdge(vertex, vertex);
                         getParent().repaint();
                     }
-                    draggingCircle = chooseCircle(e.getX(), e.getY());
-                    if (draggingCircle != null)
-                        holdingCircle = true;
+                    draggedVertex = chooseCircle(e.getX(), e.getY());
+                    if (draggedVertex != null)  // Обнаружить зажатую вершину
+                        holdingVertex = true;
                 }
             }
 
@@ -146,45 +137,45 @@ public class GPanel extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
                 if(isEditable) {
-                    holdingCircle = false;
-                    if (drawingEdge && edgeDrawn != null && (e.getX() != edgeDrawn.getV1().getX() || e.getY() != edgeDrawn.getV1().getY())) {
+                    holdingVertex = false;  // Изначально зажатая вершина больше не берётся во внимание
+                    if (drawingEdge && drawnEdge != null && (e.getX() != drawnEdge.getV1().getX() || e.getY() != drawnEdge.getV1().getY())) {   // Рисование ребра
                         boolean isInFirst = false;
                         boolean isInSecond = false;
                         VisualVertex first = null;
                         VisualVertex second = null;
-                        for (VisualVertex v : circles) {
-                            if ((Math.pow((double) (edgeDrawn.getV1().getX() - v.getX()), 2) + Math.pow((double) (edgeDrawn.getV1().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
+                        for (VisualVertex v : vertices) {
+                            if ((Math.pow((drawnEdge.getV1().getX() - v.getX()), 2) + Math.pow((drawnEdge.getV1().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
                                 first = v;
                                 isInFirst = true;
                             }
-                            if ((Math.pow((double) (edgeDrawn.getV2().getX() - v.getX()), 2) + Math.pow((double) (edgeDrawn.getV2().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
+                            if ((Math.pow((drawnEdge.getV2().getX() - v.getX()), 2) + Math.pow((drawnEdge.getV2().getY() - v.getY()), 2)) < RADIUS * RADIUS) {
                                 second = v;
                                 isInSecond = true;
                             }
                         }
                         if (isInFirst && isInSecond && first != second) {
                             if (first.getId() < second.getId()) {
-                                edgeDrawn.setV1(first);
-                                edgeDrawn.setV2(second);
+                                drawnEdge.setV1(first);
+                                drawnEdge.setV2(second);
                             } else {
-                                edgeDrawn.setV2(first);
-                                edgeDrawn.setV1(second);
+                                drawnEdge.setV2(first);
+                                drawnEdge.setV1(second);
                             }
                             boolean exists = false;
                             for (VisualEdge edge : edges) {
-                                if (edgeDrawn.equals(edge)) {
+                                if (drawnEdge.equals(edge)) {
                                     exists = true;
                                     break;
                                 }
                             }
                             if (!exists) {
-                                setShape(edgeDrawn);
-                                edges.add(edgeDrawn);
-                                solver.addEdge(edgeDrawn.getV1().getId(), edgeDrawn.getV2().getId(), edgeDrawn.getWeight());
+                                setShape(drawnEdge);
+                                edges.add(drawnEdge);
+                                solver.addEdge(drawnEdge.getV1().getId(), drawnEdge.getV2().getId(), drawnEdge.getWeight());
                             }
                         }
                     }
-                    edgeDrawn = null;
+                    drawnEdge = null;
                     getParent().repaint();
                 }
             }
@@ -212,32 +203,32 @@ public class GPanel extends JPanel {
             public void mouseDragged(MouseEvent e) {
                 super.mouseDragged(e);
                 if(isEditable) {
-                    if (drawingEdge && edgeDrawn != null) {
-                        edgeDrawn.setV2(new VisualVertex(e.getX(), e.getY(), 0, Color.BLACK));
+                    if (drawingEdge && drawnEdge != null) {
+                        drawnEdge.setV2(new VisualVertex(e.getX(), e.getY(), 0));   // Обновление рисуемого ребра
                     } else
-                        edgeDrawn = null;
+                        drawnEdge = null;
 
-                    if (holdingCircle && !drawingEdge) {
-                        dragged = false;
+                    if (holdingVertex && !drawingEdge) {    // Перетаскивание вершины
+                        draggingVertex = false;
                         for (VisualEdge edge : edges) {
-                            if (edge.getV1().getX() == draggingCircle.getX() && edge.getV1().getY() == draggingCircle.getY()) {
-                                draggingCircle.setX(e.getX());
-                                draggingCircle.setY(e.getY());
-                                edge.setV1(draggingCircle);
+                            if (edge.getV1().getId() == draggedVertex.getId()) {
+                                draggedVertex.setX(e.getX());
+                                draggedVertex.setY(e.getY());
+                                edge.setV1(draggedVertex);
                                 setShape(edge);
-                                dragged = true;
+                                draggingVertex = true;
                             }
-                            if (edge.getV2().getX() == draggingCircle.getX() && edge.getV2().getY() == draggingCircle.getY()) {
-                                draggingCircle.setX(e.getX());
-                                draggingCircle.setY(e.getY());
-                                edge.setV2(draggingCircle);
+                            if (edge.getV2().getId() == draggedVertex.getId()) {
+                                draggedVertex.setX(e.getX());
+                                draggedVertex.setY(e.getY());
+                                edge.setV2(draggedVertex);
                                 setShape(edge);
-                                dragged = true;
+                                draggingVertex = true;
                             }
                         }
-                        if (!dragged) {
-                            draggingCircle.setX(e.getX());
-                            draggingCircle.setY(e.getY());
+                        if (!draggingVertex) {
+                            draggedVertex.setX(e.getX());
+                            draggedVertex.setY(e.getY());
                         }
                     }
                     getParent().repaint();
@@ -246,24 +237,25 @@ public class GPanel extends JPanel {
         });
     }
 
-    public void clear(){
-        this.circles.clear();
-        this.edges.clear();
-        this.chosenCircle = null;
-        this.chosenEdge = null;
-        this.consideredCircle = null;
-        this.solver.clear();
+    public void clear(){ // Удаление графа
+        vertices.clear();
+        edges.clear();
+        chosenVertex = null;
+        chosenEdge = null;
+        initVertex = null;
+        lastConsideredVertex = null;
+        solver.clear();
         getParent().repaint();
     }
 
-    public void unchoose(){
-        this.chosenCircle = null;
+    public void uncheck(){  // Снять выбор со вершины или ребра
+        this.chosenVertex = null;
         this.chosenEdge = null;
     }
 
-    private VisualVertex chooseCircle(int x, int y) //........
+    private VisualVertex chooseCircle(int x, int y) // Найти вершину на данной позиции
     {
-        for (VisualVertex vertex : circles) {
+        for (VisualVertex vertex : vertices) {
             if ((Math.pow((x - vertex.getX()), 2) + Math.pow((y - vertex.getY()), 2)) < RADIUS*RADIUS + 1) {
                 return vertex;
             }
@@ -271,40 +263,40 @@ public class GPanel extends JPanel {
         return null;
     }
 
-    public void setChoosingInit(boolean flag){
+    public void setChoosingInit(boolean flag){  // Режим выбора начальной вершины
         choosingInit = flag;
     }
 
-    public void setEditable(boolean flag){
+    public void setEditable(boolean flag){  // Режим редактирования графа
         isEditable = flag;
     }
 
-    public boolean start(){
-        if(consideredCircle == null){
+    public boolean start(){ // Начало работы алгоритма
+        if(initVertex == null){
             return false;
         }
-        solver.setInit(consideredCircle.getId());
+        solver.setInit(initVertex.getId());
         getParent().repaint();
         return true;
     }
 
-    public void finish(){
-        consideredCircle = null;
+    public void finish(){   // Завершение работы алгоритма
+        initVertex = null;
         isEditable = true;
         getParent().repaint();
     }
 
-    public void deleteVertex(){
-        if(chosenCircle != null) {
-            int index = circles.indexOf(chosenCircle);
-            circles.remove(chosenCircle);
-            edges.removeIf(edge -> chosenCircle.getId() == edge.getV1().getId() || chosenCircle.getId() == edge.getV2().getId());
-            for(int i = index; i < circles.size(); i++){
-                circles.get(i).setId(i + 1);
+    public void deleteVertex(){ // Удаление выбранной вершины
+        if(chosenVertex != null) {
+            int index = vertices.indexOf(chosenVertex);
+            vertices.remove(chosenVertex);
+            edges.removeIf(edge -> chosenVertex.getId() == edge.getV1().getId() || chosenVertex.getId() == edge.getV2().getId());
+            for(int i = index; i < vertices.size(); i++){
+                vertices.get(i).setId(i + 1);
             }
-            solver.deleteVertex(chosenCircle.getId());
-            chosenCircle = null;
-            if(circles.isEmpty()){
+            solver.deleteVertex(chosenVertex.getId());
+            chosenVertex = null;
+            if(vertices.isEmpty()){
                 Window window = (Window)getTopLevelAncestor();
                 window.onGraphEmpty();
             }
@@ -312,7 +304,7 @@ public class GPanel extends JPanel {
         }
     }
 
-    public void deleteEdge(){
+    public void deleteEdge(){   // Удаление выбранного ребра
         if(chosenEdge != null){
             edges.remove(chosenEdge);
             solver.deleteEdge(chosenEdge.getV1().getId(), chosenEdge.getV2().getId());
@@ -321,7 +313,7 @@ public class GPanel extends JPanel {
         }
     }
 
-    public void setShape(VisualEdge edgeDrawn){
+    private void setShape(VisualEdge edgeDrawn){    // Установка фигуры для отображения ребра
         int newWidth = (int)Math.sqrt((Math.pow(edgeDrawn.getV2().getX() - edgeDrawn.getV1().getX(),2))
                 + (Math.pow(edgeDrawn.getV2().getY() - edgeDrawn.getV1().getY(),2)));
         int newX = (edgeDrawn.getV2().getX() + edgeDrawn.getV1().getX())/2 - newWidth/2;
@@ -336,7 +328,7 @@ public class GPanel extends JPanel {
         edgeDrawn.setLine(shape);
     }
 
-    public void load(){
+    public void load(){ // Загрузка из файла
         FileHandler fh = new FileHandler();
         ArrayList<Integer> loaded =  fh.load();
         if(!loaded.isEmpty()) {
@@ -344,7 +336,7 @@ public class GPanel extends JPanel {
             int number = loaded.get(0);
             int vId = 1;
             for (int i = 0; i < number; i++) {
-                circles.add(new VisualVertex(loaded.get(vId + i*2), loaded.get(vId + i*2 + 1), solver.addVertex(), Color.GREEN));
+                vertices.add(new VisualVertex(loaded.get(vId + i*2), loaded.get(vId + i*2 + 1), solver.addVertex()));
             }
             for (int j = number*2 + 1; j < loaded.size(); j++) {
                 if (loaded.get(j) == -1) {
@@ -353,7 +345,7 @@ public class GPanel extends JPanel {
                     int destVer = loaded.get(j++);
                     int weight = loaded.get(j);
                     solver.addEdge(vId, destVer, weight);
-                    VisualEdge addedEdge = new VisualEdge(circles.get(vId - 1), circles.get(destVer - 1));
+                    VisualEdge addedEdge = new VisualEdge(vertices.get(vId - 1), vertices.get(destVer - 1));
                     addedEdge.setWeight(weight);
                     setShape(addedEdge);
                     edges.add(addedEdge);
@@ -364,67 +356,80 @@ public class GPanel extends JPanel {
         }
     }
 
-    public void save(){
+    public void save(){ // Сохранение в файл
         edges.sort(edgeComparator);
         FileHandler fh = new FileHandler();
-        fh.save(circles, edges);
+        fh.save(vertices, edges);
     }
 
-    public static Comparator<VisualEdge> edgeComparator = new Comparator<VisualEdge>() {
-        @Override
-        public int compare(VisualEdge o1, VisualEdge o2) {
-            return (int)(o1.getV1().getId() - o2.getV1().getId());
-        }
-    };
+    // Компаратор для сортировки рёбер
+    private static final Comparator<VisualEdge> edgeComparator = Comparator.comparingInt(o -> o.getV1().getId());
 
-    public void otladka(){
-        System.out.println("Текущее состояние графа:");
-        for(VisualVertex vertex: circles) {
-            System.out.println("Вершина " + solver.getVertex(vertex.getId()).getId());
-        }
-        for(VisualEdge edge : edges){
-            System.out.println("Ребро " + edge.getV1().getId() + " " + edge.getV2().getId());
-        }
-    }
-
-    public void setEdgeWeight(int w){
+    public void setEdgeWeight(int w){   // Установка веса выбранного ребра
         chosenEdge.setWeight(w);
         solver.setEdgeWeight(chosenEdge.getV1().getId(), chosenEdge.getV2().getId(), w);
         getParent().repaint();
     }
 
-    public void paintComponent(Graphics g2){
+    public void paintComponent(Graphics g2){    // Отрисовка графа
         Graphics2D g = (Graphics2D)g2;
         super.paintComponent(g);
+
+        // Отрисовка рёбер графа с учётом текущего пути
+        lastConsideredVertex = null;
+        for(VisualVertex v : vertices){
+            if(solver.getVertex(v.getId()).getColor() == Colors.COLOR2){
+                lastConsideredVertex = v;
+                break;
+            }
+        }
+        ArrayList<Integer> path = new ArrayList<>();
+        if(lastConsideredVertex != null){
+            path.add(lastConsideredVertex.getId());
+            Vertex par = solver.getVertex(lastConsideredVertex.getId()).getParent();
+            while(par != null){
+                path.add(0, par.getId());
+                par = par.getParent();
+            }
+        }
         for(VisualEdge e : edges){
             g.setColor(Color.BLACK);
+            if(path.contains(e.getV1().getId())){
+                int ind = path.indexOf(e.getV1().getId());
+                if((ind < path.size() - 1 && path.get(ind + 1) == e.getV2().getId()) || (ind > 0 && path.get(ind - 1) == e.getV2().getId())){
+                    g.setColor(Color.RED);
+                }
+            }
             g.draw(e.getLine());
             g.fill(e.getLine());
+            g.setColor(Color.BLACK);
             String weight = Integer.toString(e.getWeight());
-            int xOffset = 0;
-            int yOffset = 0;
             double tan = (double)(e.getV2().getY() - e.getV1().getY())/(e.getV2().getX() - e.getV1().getX());
+            int xOffset = (e.getV1().getX() + e.getV2().getX())/2 - weight.length()*6 - 11;
+            int yOffset;
             if(tan < 0){
-                xOffset = (e.getV1().getX() + e.getV2().getX())/2 - weight.length()*6 - 11;
                 yOffset = (e.getV1().getY() + e.getV2().getY())/2 - 6;
             }
             else{
-                xOffset = (e.getV1().getX() + e.getV2().getX())/2 - weight.length()*6 - 11;
                 yOffset = (e.getV1().getY() + e.getV2().getY())/2 + 14;// + weight.length()*10;
             }
 
             g.drawString(weight, xOffset, yOffset);
         }
+
+        // Отрисовка выбранного ребра
         if(chosenEdge != null){
             g.setColor(Color.ORANGE);
             g.draw(chosenEdge.getLine());
             g.fill(chosenEdge.getLine());
         }
-        for(VisualVertex p: circles) {
+
+        // Отрисовка всех вершин
+        for(VisualVertex p: vertices) {
             Color col = Color.BLACK;
             Colors color = solver.getVertex(p.getId()).getColor();
             int pathLen = solver.getVertex(p.getId()).getPathLen();
-            String pLen = "";
+            String pLen;
             if(pathLen == Integer.MAX_VALUE){
                 pLen = "\u221E";
             }
@@ -432,17 +437,15 @@ public class GPanel extends JPanel {
                 pLen = Integer.toString(pathLen);
             }
             switch (color){
-                case COLOR1 -> col = Color.GREEN;
-                case COLOR2 -> col = Color.PINK;
+                case COLOR1 -> col = Color.WHITE;//Было GREEN
+                case COLOR2 -> {
+                    col = Color.PINK;
+                    lastConsideredVertex = p;
+                }
                 case COLOR3 -> col = Color.ORANGE;
-<<<<<<< Updated upstream
-                case COLOR4 -> col = Color.BLUE;
-=======
                 case COLOR4 -> col = Color.lightGray;//Было BLUE
->>>>>>> Stashed changes
             }
             g.setColor(col);
-            //g.setColor(p.getColor());
             g.fillOval(p.getX() - RADIUS, p.getY() - RADIUS, RADIUS*2, RADIUS*2);
             g.setColor(Color.BLACK);
             g.drawOval(p.getX() - RADIUS, p.getY() - RADIUS, RADIUS*2, RADIUS*2);
@@ -455,19 +458,24 @@ public class GPanel extends JPanel {
             g.drawRect(p.getX() - 37 - 7*(pLen.length() - 1), p.getY() + 6, 8*(pLen.length() + 1), 14);
             g.drawString(pLen, p.getX() - 35 - 7*(pLen.length() - 1), p.getY() + 18);
         }
-        if(edgeDrawn != null){
-            g.drawLine(edgeDrawn.getV1().getX(), edgeDrawn.getV1().getY(), edgeDrawn.getV2().getX(), edgeDrawn.getV2().getY());
-        }
-        if(consideredCircle != null){
-            g.setColor(Color.RED);
-            g.setStroke(new BasicStroke(3));
-            g.drawOval(consideredCircle.getX() - RADIUS, consideredCircle.getY() - RADIUS, RADIUS*2, RADIUS*2);
+
+        // Отрисовка рисуемого ребра
+        if(drawnEdge != null){
+            g.drawLine(drawnEdge.getV1().getX(), drawnEdge.getV1().getY(), drawnEdge.getV2().getX(), drawnEdge.getV2().getY());
         }
 
-        if(chosenCircle != null){
+        // Отрисовка начальной вершины
+        if(initVertex != null){
+            g.setColor(Color.RED);
+            g.setStroke(new BasicStroke(3));
+            g.drawOval(initVertex.getX() - RADIUS, initVertex.getY() - RADIUS, RADIUS*2, RADIUS*2);
+        }
+
+        // Отрисовка выбранной вершины
+        if(chosenVertex != null){
             g.setColor(Color.YELLOW);
             g.setStroke(new BasicStroke(3));
-            g.drawOval(chosenCircle.getX() - RADIUS, chosenCircle.getY() - RADIUS, RADIUS*2, RADIUS*2);
+            g.drawOval(chosenVertex.getX() - RADIUS, chosenVertex.getY() - RADIUS, RADIUS*2, RADIUS*2);
         }
     }
 }

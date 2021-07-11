@@ -1,16 +1,13 @@
-import java.awt.*;
-
+// Вершина для отрисовки
 public class VisualVertex {
     private int x;
     private int y;
     private int id;
-    private Color color;
 
-    public VisualVertex(int x, int y, int id, Color color){
+    public VisualVertex(int x, int y, int id){
         this.x = x;
         this.y = y;
         this.id = id;
-        this.color = color;
     }
 
     public void setX(int x){
@@ -19,10 +16,6 @@ public class VisualVertex {
 
     public void setY(int y){
         this.y = y;
-    }
-
-    public void setColor(Color color){
-        this.color = color;
     }
 
     public void setId(int id){
@@ -39,9 +32,5 @@ public class VisualVertex {
 
     public int getId(){
         return this.id;
-    }
-
-    public Color getColor(){
-        return this.color;
     }
 }
